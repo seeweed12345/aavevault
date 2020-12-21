@@ -47,7 +47,7 @@
 The smart contracts were audited independently by
 [Footprints Tech](https://www.linkedin.com/company/footprints-tech/)
 
-**[Footprints Tech Audit Report](https://github.com/etharemit/etha-protocol/blob/master/Audits/Etha_Lend_Audit_Final.pdf)**
+**[Footprints Tech Audit Report](https://github.com/ethalend/ETHALend-v1-Contracts/blob/master/Audits/Etha_Lend_Audit_Final.pdf)**
 
 ### Code Coverage
 
