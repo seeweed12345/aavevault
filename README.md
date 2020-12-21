@@ -27,7 +27,7 @@
 | Contract Name                                                                                                                        | Description                                                 |
 | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
 | [`SmartWallet`](https://github.com/ethalend/ETHALend-v1-Contracts/blob/master/contracts/wallet/SmartWallet.sol)                      | Protocol wallets created and owned by each user.            |
-| [`Registry`](./contracts/external/proxies/PayableProxyForSoloMargin.sol)                                                             | Deploys and keeps track of all wallets inside the protocol. |
+| [`Registry`](https://github.com/ethalend/ETHALend-v1-Contracts/blob/master/contracts/registry/EthaRegistry.sol)                                                             | Deploys and keeps track of all wallets inside the protocol. |
 | [`Balances`](https://github.com/ethalend/ETHALend-v1-Contracts/blob/master/contracts/adapters/Balances.sol)                          | Gets wallet balances.                                       |
 | [`Investments`](https://github.com/ethalend/ETHALend-v1-Contracts/blob/master/contracts/adapters/Investments.sol)                    | Gets invested balances in protocols.                        |
 | [`ProtocolIsData`](https://github.com/ethalend/ETHALend-v1-Contracts/blob/master/contracts/adapters/ProtocolsData.sol)               | Gets protocol Data.                                         |
