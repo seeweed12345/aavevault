@@ -24,21 +24,21 @@
 
 ## Contracts
 
-| Contract Name                                                                                                                      | Description                                                 |
-| ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| [`SmartWallet`](https://github.com/etharemit/etha-protocol/blob/development/contracts/wallet/SmartWallet.sol)                      | Protocol wallets created and owned by each user.            |
-| [`Registry`](./contracts/external/proxies/PayableProxyForSoloMargin.sol)                                                           | Deploys and keeps track of all wallets inside the protocol. |
-| [`Balances`](https://github.com/etharemit/etha-protocol/blob/development/contracts/adapters/Balances.sol)                          | Gets wallet balances.                                       |
-| [`Investments`](https://github.com/etharemit/etha-protocol/blob/development/contracts/adapters/Investments.sol)                    | Gets invested balances in protocols.                        |
-| [`ProtocolIsData`](https://github.com/etharemit/etha-protocol/blob/development/contracts/adapters/ProtocolsData.sol)               | Gets protocol Data.                                         |
-| [`StakingRewards`](https://github.com/etharemit/etha-protocol/blob/development/contracts/staking/StakingRewards.sol)               | Gets Staking rewards.                                       |
-| [`StakingRewardsFactory`](https://github.com/etharemit/etha-protocol/blob/development/contracts/staking/StakingRewardsFactory.sol) | Factory contract of StakingRewards.                         |
-| [`StakingLogic`](https://github.com/etharemit/etha-protocol/blob/development/contracts/logics/StakingLogic.sol)                    | Enables users to provide liquidity for rewards.             |
-| [`CompoundLogic`](https://github.com/etharemit/etha-protocol/blob/development/contracts/logics/CompoundLogic.sol)                  | Enables interaction with Compound Finance                   |
-| [`CurveLogic`](https://github.com/etharemit/etha-protocol/blob/development/contracts/logics/CurveLogic.sol)                        | Enables interaction with CURVE Finance.                     |
-| [`DyDxLogic`](https://github.com/etharemit/etha-protocol/blob/development/contracts/logics/DyDxLogic.sol)                          | Enables interaction with DyDx.                              |
-| [`TransferLogic`](https://github.com/etharemit/etha-protocol/blob/development/contracts/logics/TransferLogic.sol)                  | Transfer Logic for the Staking contract.                    |
-| [`UniswapLogic`](https://github.com/etharemit/etha-protocol/blob/development/contracts/logics/UniswapLogic.sol)                    | Enables interaction with Uniswap.                           |
+| Contract Name                                                                                                                              | Description                                                 |
+| ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| [`SmartWallet`](https://github.com/etharemit/ETHALend-v1-Contracts/blob/development/contracts/wallet/SmartWallet.sol)                      | Protocol wallets created and owned by each user.            |
+| [`Registry`](./contracts/external/proxies/PayableProxyForSoloMargin.sol)                                                                   | Deploys and keeps track of all wallets inside the protocol. |
+| [`Balances`](https://github.com/etharemit/ETHALend-v1-Contracts/blob/development/contracts/adapters/Balances.sol)                          | Gets wallet balances.                                       |
+| [`Investments`](https://github.com/etharemit/ETHALend-v1-Contracts/blob/development/contracts/adapters/Investments.sol)                    | Gets invested balances in protocols.                        |
+| [`ProtocolIsData`](https://github.com/etharemit/ETHALend-v1-Contracts/blob/development/contracts/adapters/ProtocolsData.sol)               | Gets protocol Data.                                         |
+| [`StakingRewards`](https://github.com/etharemit/ETHALend-v1-Contracts/blob/development/contracts/staking/StakingRewards.sol)               | Gets Staking rewards.                                       |
+| [`StakingRewardsFactory`](https://github.com/etharemit/ETHALend-v1-Contracts/blob/development/contracts/staking/StakingRewardsFactory.sol) | Factory contract of StakingRewards.                         |
+| [`StakingLogic`](https://github.com/etharemit/ETHALend-v1-Contracts/blob/development/contracts/logics/StakingLogic.sol)                    | Enables users to provide liquidity for rewards.             |
+| [`CompoundLogic`](https://github.com/etharemit/ETHALend-v1-Contracts/blob/development/contracts/logics/CompoundLogic.sol)                  | Enables interaction with Compound Finance                   |
+| [`CurveLogic`](https://github.com/etharemit/ETHALend-v1-Contracts/blob/development/contracts/logics/CurveLogic.sol)                        | Enables interaction with CURVE Finance.                     |
+| [`DyDxLogic`](https://github.com/etharemit/ETHALend-v1-Contracts/blob/development/contracts/logics/DyDxLogic.sol)                          | Enables interaction with DyDx.                              |
+| [`TransferLogic`](https://github.com/etharemit/ETHALend-v1-Contracts/blob/development/contracts/logics/TransferLogic.sol)                  | Transfer Logic for the Staking contract.                    |
+| [`UniswapLogic`](https://github.com/etharemit/ETHALend-v1-Contracts/blob/development/contracts/logics/UniswapLogic.sol)                    | Enables interaction with Uniswap.                           |
 
 ## Security
 
