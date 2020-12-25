@@ -60,7 +60,7 @@ The disclosure of security vulnerabilities helps us ensure the security of our u
 **How to report a security vulnerability?**
 
 If you believe you’ve found a security vulnerability in one of our contracts
-send it to us by emailing [security@etharemit.com](mailto:security@etharemit.com)
+send it to us by emailing [security@etharemit.com](mailto:security@ethalend.org)
 or get in touch with one of the [Maintainers](#maintainers).
 
 Please include the following details with your report:
