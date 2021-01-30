@@ -1,15 +1,16 @@
-pragma solidity 0.5.17;
+//SPDX-License-Identifier: MIT
+pragma solidity 0.7.3;
 
-import "@openzeppelin/upgrades/contracts/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
 import "../wallet/SmartWallet.sol";
-import "../libs/SafeMath.sol";
-import "../utils/Ownable.sol";
 import "../utils/CloneFactory.sol";
 
 /**
  * @title Logic Registry
  */
-contract LogicRegistry is Ownable {
+contract LogicRegistry is OwnableUpgradeable {
     using SafeMath for uint256;
 
     event LogEnableLogic(address logicAddress);
@@ -72,7 +73,7 @@ contract WalletRegistry is LogicRegistry, CloneFactory {
 
     /// @dev Deploys a new proxy instance and sets custom owner of proxy
     /// Throws if the owner already have a UserWallet
-    /// @return address of new Smart Wallet
+    /// @return wallet - address of new Smart Wallet
     function deployWallet() public returns (SmartWallet wallet) {
         require(
             wallets[msg.sender] == SmartWallet(0),
@@ -94,7 +95,7 @@ contract WalletRegistry is LogicRegistry, CloneFactory {
 
 /// @title InstaRegistry
 /// @dev Initializing Registry
-contract EthaRegistry is WalletRegistry, Initializable {
+contract EthaRegistry is WalletRegistry {
     /// @dev address of recipient receiving the protocol fees
     address public feeRecipient;
 
@@ -113,7 +114,7 @@ contract EthaRegistry is WalletRegistry, Initializable {
             _owner != address(0) && _feeRecipient != address(0),
             "ZERO ADDRESS"
         );
-        _transferOwnership(_owner);
+        transferOwnership(_owner);
         fee = _fee;
         feeRecipient = _feeRecipient;
 

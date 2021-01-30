@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.7.0;
 
 interface IGasToken {
     function approve(address, uint256) external;

@@ -1,4 +1,5 @@
-pragma solidity ^0.5.0;
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IRewards.sol";
@@ -43,5 +44,5 @@ contract StakingLogic {
         rewards.exit();
     }
 
-    function() external payable {}
+    receive() external payable {}
 }

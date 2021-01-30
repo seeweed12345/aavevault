@@ -1,10 +1,11 @@
-pragma solidity ^0.5.2;
+//SPDX-License-Identifier: MIT
+pragma solidity 0.7.3;
 pragma experimental ABIEncoderV2;
 
 import "../interfaces/IRegistry.sol";
 import "../interfaces/IGasToken.sol";
 import "../interfaces/IERC20.sol";
-import "../libs/SafeMath.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
  * @title Registry related helper functions
@@ -151,5 +152,5 @@ contract SmartWallet is UserAuth {
     /**
         @dev allow ether deposits
      */
-    function() external payable {}
+    receive() external payable {}
 }

@@ -1,4 +1,5 @@
-pragma solidity ^0.5.0;
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.7.0;
 
 import "../interfaces/IUniswapFactory.sol";
 import "../interfaces/IUniswapV2Factory.sol";
@@ -49,7 +50,7 @@ contract UniswapLogic {
                 returnAmount = fromExchange.tokenToEthSwapInput(
                     returnAmount,
                     1,
-                    now
+                    block.timestamp
                 );
             }
         }
@@ -57,9 +58,7 @@ contract UniswapLogic {
         if (!destToken.isETH()) {
             IUniswapExchange toExchange = uniswapFactory.getExchange(destToken);
             if (toExchange != IUniswapExchange(0)) {
-                returnAmount = toExchange.ethToTokenSwapInput.value(
-                    returnAmount
-                )(1, now);
+                returnAmount = toExchange.ethToTokenSwapInput{value:returnAmount}(1, block.timestamp);
             }
         }
     }
@@ -76,7 +75,7 @@ contract UniswapLogic {
         uint256 returnAmount = 0;
 
         if (fromToken.isETH()) {
-            weth.deposit.value(realAmt)();
+            weth.deposit{value:realAmt}();
         }
 
         IERC20 fromTokenReal = fromToken.isETH() ? weth : fromToken;
@@ -118,10 +117,10 @@ contract UniswapLogic {
 
         // Wrap Ether
         if (tokenA.isETH()) {
-            weth.deposit.value(realAmtA)();
+            weth.deposit{value:realAmtA}();
         }
         if (tokenB.isETH()) {
-            weth.deposit.value(realAmtB)();
+            weth.deposit{value:realAmtB}();
         }
 
         // Approve Router
@@ -136,7 +135,7 @@ contract UniswapLogic {
             1,
             1,
             address(this),
-            now + 1
+            block.timestamp + 1
         );
     }
 
@@ -160,9 +159,9 @@ contract UniswapLogic {
             1,
             1,
             address(this),
-            now + 1
+            block.timestamp + 1
         );
     }
 
-    function() external payable {}
+    receive() external payable {}
 }

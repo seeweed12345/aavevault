@@ -1,4 +1,5 @@
-pragma solidity ^0.5.7;
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.7.0;
 
 interface CTokenInterface {
     function redeem(uint256 redeemTokens) external returns (uint256);
@@ -241,7 +242,7 @@ contract CompoundResolver is Helpers {
 
         if (erc20 == getAddressETH()) {
             CETHInterface cToken = CETHInterface(cErc20);
-            cToken.mint.value(tokenAmt)();
+            cToken.mint{value:tokenAmt}();
         } else {
             ERC20Interface token = ERC20Interface(erc20);
             uint256 balance = token.balanceOf(address(this));
@@ -356,7 +357,7 @@ contract CompoundResolver is Helpers {
                 toRepay = borrows;
                 msg.sender.transfer(sub(msg.value, toRepay));
             }
-            cToken.repayBorrow.value(toRepay)();
+            cToken.repayBorrow{value:toRepay}();
             emit LogRepay(erc20, cErc20, toRepay, address(this));
         } else {
             CERC20Interface cToken = CERC20Interface(cErc20);
@@ -393,7 +394,7 @@ contract CompoundResolver is Helpers {
                 toRepay = borrows;
                 msg.sender.transfer(sub(msg.value, toRepay));
             }
-            cToken.repayBorrowBehalf.value(toRepay)(borrower);
+            cToken.repayBorrowBehalf{value:toRepay}(borrower);
             emit LogRepayBehalf(
                 borrower,
                 erc20,
@@ -430,5 +431,5 @@ contract CompoundResolver is Helpers {
 }
 
 contract CompoundLogic is CompoundResolver {
-    function() external payable {}
+    receive() external payable {}
 }

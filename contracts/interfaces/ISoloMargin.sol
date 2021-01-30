@@ -1,7 +1,7 @@
-pragma solidity ^0.5.7;
+pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
-contract ISoloMargin {
+abstract contract ISoloMargin {
     struct Info {
         address owner; // The address that owns the account
         uint256 number; // A nonce that allows a single address to control many accounts
@@ -63,20 +63,23 @@ contract ISoloMargin {
     }
 
     function operate(Info[] memory accounts, ActionArgs[] memory actions)
-        public;
+        public virtual;
 
     function getAccountWei(Info memory account, uint256 marketId)
         public
+        virtual
         view
         returns (Wei memory);
 
     function getMarketInterestRate(uint256 marketId)
         public
+        virtual
         view
         returns (Rate memory);
 
     function getMarketTotalPar(uint256 marketId)
         public
+        virtual
         view
         returns (TotalPar memory);
 }
