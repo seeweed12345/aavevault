@@ -105,6 +105,7 @@ contract EthaRegistry is WalletRegistry {
     mapping(address => bool) public notAllowed;
 
     function initialize(
+        address _impl,
         address _owner,
         address _feeRecipient,
         uint256 _fee
@@ -113,7 +114,8 @@ contract EthaRegistry is WalletRegistry {
             _owner != address(0) && _feeRecipient != address(0),
             "ZERO ADDRESS"
         );
-        // transferOwnership(_owner);
+
+        implementation = _impl;
         __Ownable_init();
         fee = _fee;
         feeRecipient = _feeRecipient;

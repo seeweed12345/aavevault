@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "hardhat test",
+    "test-w": "hardhat test ./test/wallet.test.js",
     "compile": "hardhat compile",
     "deploy": "truffle migrate --reset --network etha",
     "deploy-main": "truffle migrate --reset --network mainnet",
@@ -15,8 +16,6 @@
     "initialize": "node scripts/initialize",
     "enable": "truffle exec scripts/addLogic.js",
     "disable": "truffle exec scripts/disableLogic.js",
-    "test-multi": "truffle test test/multisig.test.js",
-    "test-reg": "truffle test test/registry.test.js",
     "flatten-sm": "truffle-flattener contracts/SmartWallet.sol > flats/SmartWallet.sol",
     "flatten-re": "truffle-flattener contracts/EthaRegistry.sol > flats/EthaRegistry.sol"
   },
