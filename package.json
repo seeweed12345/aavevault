@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "ganache": "ganache-cli -p 8546 -i 888",
-    "fork": "ganache-cli -f http://localhost:8545 -i 666 -u 0x07BB41Df8C1d275c4259CdD0dBf0189d6a9a5F32 -u 0x92d7796c04ee34d1d16c57fab92fc2bccf434468",
+    "test": "hardhat test",
+    "compile": "hardhat compile",
     "deploy": "truffle migrate --reset --network etha",
     "deploy-main": "truffle migrate --reset --network mainnet",
     "reset": "npm run deploy3 && npm run complete",
