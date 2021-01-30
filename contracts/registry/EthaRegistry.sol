@@ -1,9 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.7.3;
 
-import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../wallet/SmartWallet.sol";
 import "../utils/CloneFactory.sol";
 
@@ -114,7 +113,8 @@ contract EthaRegistry is WalletRegistry {
             _owner != address(0) && _feeRecipient != address(0),
             "ZERO ADDRESS"
         );
-        transferOwnership(_owner);
+        // transferOwnership(_owner);
+        __Ownable_init();
         fee = _fee;
         feeRecipient = _feeRecipient;
 
