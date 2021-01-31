@@ -22,6 +22,7 @@ const hre = require("hardhat");
 
 const FEE = 1000;
 const USER = "0xdd79dc5b781b14ff091686961adc5d47e434f4b0";
+const CHI_HOLDER = "0xca3650b0a1158c7736253c74d67a536d805d2f3e";
 const MULTISIG = "0x9Fd332a4e9C7F2f0dbA90745c1324Cc170D16fE4";
 const SOLO_MARGIN = "0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e";
 
@@ -30,13 +31,14 @@ const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 const ADAI_ADDRESS = "0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d";
 const CDAI_ADDRESS = "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643";
+const CHI_ADDRESS = "0x0000000000004946c0e9F43F4Dee607b0eF1fA1c";
 
 // HELPERS
 const toWei = (value) => web3.utils.toWei(String(value));
 const fromWei = (value) => Number(web3.utils.fromWei(String(value)));
 
 contract("Smart Wallet", () => {
-  let registry, wallet, transfers, compound, aave, dydx, uniswap;
+  let registry, wallet, transfers, compound, aave, dydx, uniswap, chi;
 
   before(async function () {
     await hre.network.provider.request({
@@ -44,7 +46,15 @@ contract("Smart Wallet", () => {
       params: [USER],
     });
 
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [CHI_HOLDER],
+    });
+
     dai = await IERC20.at(DAI_ADDRESS);
+    chi = await IERC20.at(CHI_ADDRESS);
+
+    await chi.transfer(USER, 200, { from: CHI_HOLDER });
 
     const EthaRegistry = await ethers.getContractFactory("EthaRegistry");
 
@@ -78,6 +88,13 @@ contract("Smart Wallet", () => {
     const swAddress = await registry.wallets(USER);
     wallet = await SmartWallet.at(swAddress);
     console.log("\tUSER SW:", swAddress);
+
+    await chi.approve(swAddress, MAX_UINT256, { from: USER });
+  });
+
+  it("should fund user with CHI and approve SW", async function () {
+    await chi.transfer(USER, 200, { from: CHI_HOLDER });
+    await chi.approve(wallet.address, MAX_UINT256, { from: USER });
   });
 
   it("should deposit DAI to the smart wallet", async function () {
@@ -142,6 +159,37 @@ contract("Smart Wallet", () => {
     const aDaiContract = await IERC20.at(ADAI_ADDRESS);
     const invested = await aDaiContract.balanceOf(wallet.address);
     assert.equal(invested, String(50e18));
+  });
+
+  it("should invest DAI to Aave Protocol burning CHI tokens", async function () {
+    const data = web3.eth.abi.encodeFunctionCall(
+      {
+        name: "mintAToken",
+        type: "function",
+        inputs: [
+          {
+            type: "address",
+            name: "erc20",
+          },
+          {
+            type: "uint256",
+            name: "tokenAmt",
+          },
+        ],
+      },
+      [DAI_ADDRESS, String(50e18)]
+    );
+
+    const tx = await wallet.execute([aave.address], [data], true, {
+      from: USER,
+      gas: web3.utils.toHex(5e6),
+    });
+
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+
+    const aDaiContract = await IERC20.at(ADAI_ADDRESS);
+    const invested = await aDaiContract.balanceOf(wallet.address);
+    assert(fromWei(invested) > 100); // 50 + 50 + interest earned
   });
 
   it("should invest DAI to Compound Protocol", async function () {
