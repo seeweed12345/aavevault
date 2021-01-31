@@ -47,8 +47,7 @@ contract TransferLogic {
      */
     function deposit(address erc20, uint256 amount) external payable {
         if (erc20 != getAddressETH()) {
-            IERC20 erc20Contract = IERC20(erc20);
-            erc20Contract.transferFrom(msg.sender, address(this), amount);
+            IERC20(erc20).transferFrom(msg.sender, address(this), amount);
         }
 
         emit LogDeposit(erc20, amount);
