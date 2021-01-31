@@ -84,10 +84,11 @@ contract("Smart Wallet", () => {
   });
 
   it("should deploy a smart wallet", async function () {
-    await registry.deployWallet({ from: USER });
+    const tx = await registry.deployWallet({ from: USER });
     const swAddress = await registry.wallets(USER);
     wallet = await SmartWallet.at(swAddress);
     console.log("\tUSER SW:", swAddress);
+    console.log("\tGas Used:", tx.receipt.gasUsed);
 
     await chi.approve(swAddress, MAX_UINT256, { from: USER });
   });
