@@ -7,6 +7,7 @@ require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-web3");
 require("@openzeppelin/hardhat-upgrades");
+require("hardhat-gas-reporter");
 
 module.exports = {
   networks: {
@@ -24,6 +25,14 @@ module.exports = {
   etherscan: {
     apiKey: process.env.ETHERSCAN_API,
     // url: "https://api-rinkeby.etherscan.io/",
+  },
+  gasReporter: {
+    currency: "USD",
+    gasPrice: 60,
+    // showTimeSpent: true,
+    enabled: process.env.REPORT_GAS ? true : false,
+    coinmarketcap: process.env.CMC_API_KEY,
+    // outputFile: "./gas-report.txt",
   },
   solidity: {
     compilers: [
