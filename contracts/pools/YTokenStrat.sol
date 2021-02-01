@@ -8,6 +8,7 @@ import "../libs/Timelock.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/Math.sol";
+import "hardhat/console.sol";
 
 contract YTokenStrat is IStrat {
     
@@ -72,6 +73,7 @@ contract YTokenStrat is IStrat {
     }
 
     function calcTotalValue() external view override returns (uint) {
+        console.log("totalYearnDeposits", totalYearnDeposits());
         return Math.max(totalYearnDeposits(), 1) // cannot be lower than 1 because we subtract 1 after
         .sub(1) // account for dust
         .add(underlying.balanceOf(address(this)));

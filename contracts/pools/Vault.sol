@@ -7,6 +7,7 @@ import "./DividendToken.sol";
 import "../libs/Timelock.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "hardhat/console.sol";
 
 contract Vault is Ownable, Pausable, DividendToken {
     using SafeMath for uint256;
@@ -155,6 +156,7 @@ contract Vault is Ownable, Pausable, DividendToken {
 
     function harvest(uint amount) public onlyHarvester returns (uint afterFee) {
         require(amount <= underlyingYield(), "Amount larger than generated yield");
+        console.log("passed");
         strat.divest(amount);
         if(performanceFee > 0) {
             uint fee = amount.mul(performanceFee).div(MAX_FEE);

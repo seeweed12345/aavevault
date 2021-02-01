@@ -10,9 +10,10 @@ const IERC20 = artifacts.require(
 );
 
 const {
-  expectRevert,
+  time,
   constants: { MAX_UINT256 },
 } = require("@openzeppelin/test-helpers");
+const { BN } = require("@openzeppelin/test-helpers/src/setup");
 
 // const { assert } = require("hardhat");
 const hre = require("hardhat");
@@ -76,6 +77,13 @@ contract("Inverse Vaults", () => {
 
     // Deposit DAI
     await dai.transfer(swAddress, toWei(200), { from: USER });
+
+    // Fund Mulsitig with ETH
+    await web3.eth.sendTransaction({
+      from: USER,
+      to: MULTISIG,
+      value: toWei(0.5),
+    });
   });
 
   it("should deploy the vault contract", async function () {
@@ -226,5 +234,75 @@ contract("Inverse Vaults", () => {
 
     const vaultTokenBalance = await vault.balanceOf(wallet.address);
     assert(fromWei(vaultTokenBalance) > 0);
+  });
+
+  it("Should withdraw DAI from vault", async function () {
+    const startDaiBalance = await dai.balanceOf(wallet.address);
+
+    const data = web3.eth.abi.encodeFunctionCall(
+      {
+        name: "withdraw",
+        type: "function",
+        inputs: [
+          {
+            type: "uint256",
+            name: "tokenAmt",
+          },
+          {
+            type: "address",
+            name: "vault",
+          },
+        ],
+      },
+      [String(50e18), vault.address]
+    );
+
+    const tx = await wallet.execute([inverse.address], [data], false, {
+      from: USER,
+      gas: web3.utils.toHex(5e6),
+    });
+
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+
+    const endDaiBalance = await dai.balanceOf(wallet.address);
+    assert.equal(
+      new BN(endDaiBalance).sub(new BN(startDaiBalance)),
+      String(50e18)
+    );
+
+    // const vaultTokenBalance = await vault.balanceOf(wallet.address);
+    // console.log(String(50e18));
+  });
+
+  it.skip("Should harvest profits into ETH", async function () {
+    await vault.harvest(1, { from: MULTISIG }); // onlyHarvester
+  });
+
+  it.skip("Should claim ETH profits from vault", async function () {
+    const startETHBalance = await web3.eth.getBalance(wallet.address);
+
+    const data = web3.eth.abi.encodeFunctionCall(
+      {
+        name: "claim",
+        type: "function",
+        inputs: [
+          {
+            type: "address",
+            name: "vault",
+          },
+        ],
+      },
+      [vault.address]
+    );
+
+    const tx = await wallet.execute([inverse.address], [data], false, {
+      from: USER,
+      gas: web3.utils.toHex(5e6),
+    });
+
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+
+    const endETHBalance = await web3.eth.getBalance(wallet.address);
+    assert(new BN(endETHBalance).sub(new BN(startETHBalance)) > 0);
   });
 });
