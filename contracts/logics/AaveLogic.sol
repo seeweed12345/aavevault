@@ -1,4 +1,5 @@
-pragma solidity ^0.5.7;
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.7.0;
 
 interface AaveLendingPoolInterface {
     function deposit(
@@ -244,7 +245,7 @@ contract AaveResolver is Helpers {
             AaveLendingPoolInterface aToken = AaveLendingPoolInterface(
                 getLendingPoolAddress()
             );
-            aToken.deposit.value(tokenAmt)(erc20, tokenAmt, 0);
+            aToken.deposit{value:tokenAmt}(erc20, tokenAmt, 0);
         } else {
             ERC20Interface token = ERC20Interface(erc20);
             require(
@@ -294,5 +295,5 @@ contract AaveResolver is Helpers {
 }
 
 contract AaveLogic is AaveResolver {
-    function() external payable {}
+    receive() external payable {}
 }

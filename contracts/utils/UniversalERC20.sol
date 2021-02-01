@@ -1,4 +1,5 @@
-pragma solidity ^0.5.0;
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.7.0;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -113,11 +114,11 @@ library UniversalERC20 {
             return 18;
         }
 
-        (bool success, bytes memory data) = address(token).staticcall.gas(
-            10000
-        )(abi.encodeWithSignature("decimals()"));
+        (bool success, bytes memory data) = address(token).staticcall{
+            gas:10000
+        }(abi.encodeWithSignature("decimals()"));
         if (!success || data.length == 0) {
-            (success, data) = address(token).staticcall.gas(10000)(
+            (success, data) = address(token).staticcall{gas:10000}(
                 abi.encodeWithSignature("DECIMALS()")
             );
         }

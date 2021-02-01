@@ -1,4 +1,5 @@
-pragma solidity ^0.5.8;
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "../interfaces/ISoloMargin.sol";
@@ -185,7 +186,7 @@ contract DydxResolver is Helpers {
         if (erc20Addr == getAddressETH()) {
             uint256 balance = address(this).balance;
             if (toDeposit > balance) toDeposit = balance;
-            ERC20Interface(getAddressWETH()).deposit.value(toDeposit)();
+            ERC20Interface(getAddressWETH()).deposit{value:toDeposit}();
             setApproval(getAddressWETH(), toDeposit, getSoloAddress());
         } else {
             uint256 balance = ERC20Interface(erc20Addr).balanceOf(
@@ -213,7 +214,7 @@ contract DydxResolver is Helpers {
         require(!tokenSign, "No debt to payback");
         toPayback = toPayback > tokenAmt ? tokenAmt : toPayback;
         if (erc20Addr == getAddressETH()) {
-            ERC20Interface(getAddressWETH()).deposit.value(toPayback)();
+            ERC20Interface(getAddressWETH()).deposit{value:toPayback}();
             setApproval(getAddressWETH(), toPayback, getSoloAddress());
             msg.sender.transfer(address(this).balance);
         } else {
@@ -301,5 +302,5 @@ contract DydxResolver is Helpers {
 }
 
 contract DyDxLogic is DydxResolver {
-    function() external payable {}
+    receive() external payable {}
 }

@@ -1,130 +1,66 @@
-const EthaRegistry = artifacts.require("EthaRegistry");
-const EthaRegistryMockV2 = artifacts.require("EthaRegistryMockV2");
-const ProxyAdmin = artifacts.require("ProxyAdmin");
-const SmartWallet = artifacts.require("SmartWallet");
-
-const { web3 } = ProxyAdmin;
 const { expectRevert } = require("@openzeppelin/test-helpers");
-const { deployWithProxy } = require("../helpers");
 
 const FEE = 1000;
 
-/**
- *
- * You need just new contract inherit from old and add new functions
- * Old data will be saved
- */
-
-contract("EthaRegistry", ([deployer, owner, alice, multisig, random]) => {
+contract("EthaRegistry", ([owner, alice, multisig, random]) => {
   let registry;
-  let proxyAdmin;
-  let v1;
-  let v2;
-  let sw;
 
   before(async function () {
-    proxyAdmin = await ProxyAdmin.new();
-
-    const registryDeployment = await deployWithProxy(
-      EthaRegistry,
-      proxyAdmin.address,
+    const EthaRegistry = await ethers.getContractFactory("EthaRegistry");
+    registry = await upgrades.deployProxy(EthaRegistry, [
       multisig,
       multisig,
-      FEE
+      FEE,
+    ]);
+  });
+
+  it("should check not allowed addresses", async function () {
+    const notAllowed = await registry.notAllowed(
+      "0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d"
     );
-    registry = registryDeployment.contract;
-    v1 = registryDeployment.implementation;
+    assert(notAllowed);
   });
 
-  it("should get correct proxyAdmin owner", async function () {
-    const _owner = await proxyAdmin.owner();
-    assert.equal(_owner, deployer);
-  });
-
-  it("should get correct registry proxy admin", async function () {
-    const admin = await proxyAdmin.getProxyAdmin(registry.address);
-    assert.equal(admin, proxyAdmin.address);
-  });
-
-  it("should get correct registry implementation", async function () {
-    assert.equal(
-      await proxyAdmin.getProxyImplementation(registry.address),
-      v1.address
+  it("should upgrade proxy contract", async function () {
+    const EthaRegistryMockV2 = await ethers.getContractFactory(
+      "EthaRegistryMockV2"
+    );
+    registry = await upgrades.upgradeProxy(
+      registry.address,
+      EthaRegistryMockV2
     );
   });
 
-  it("should transfer proxyAdmin ownership to multisig", async function () {
-    await expectRevert.unspecified(
-      proxyAdmin.transferOwnership(multisig, { from: random })
+  it("should check if contract remains with the same storage", async function () {
+    const notAllowed = await registry.notAllowed(
+      "0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d" // aDAI
     );
-    await proxyAdmin.transferOwnership(multisig, {
-      from: deployer,
-    });
+    assert(notAllowed);
   });
 
-  it("should be able to renounce ownership of registry implementation", async function () {
-    await expectRevert.unspecified(v1.renounceOwnership({ from: random }));
-    await v1.renounceOwnership({
-      from: deployer,
-    });
+  it("should be able to register a logic contract", async function () {
+    const AaveLogic = await ethers.getContractFactory("AaveLogic");
+    const aave = await AaveLogic.deploy();
+
+    await registry.enableLogic(aave.address);
+
+    const registered = await registry.logicProxies(aave.address);
+
+    assert(registered);
   });
 
-  it("only multisig should assign smart wallet implementation", async function () {
-    sw = await SmartWallet.new();
+  it("should be able to register a multiple logic contracts", async function () {
+    const TransferLogic = await ethers.getContractFactory("TransferLogic");
+    const CompoundLogic = await ethers.getContractFactory("CompoundLogic");
+    const transfers = await TransferLogic.deploy();
+    const compound = await CompoundLogic.deploy();
 
-    await expectRevert.unspecified(registry.setImplementation(sw.address), {
-      from: random,
-    });
-    await registry.setImplementation(sw.address, {
-      from: multisig,
-    });
+    await registry.enableLogicMultiple([transfers.address, compound.address]);
 
-    const impl = await registry.implementation();
-    assert.equal(impl, sw.address);
-  });
+    let registered = await registry.logicProxies(transfers.address);
+    assert(registered);
 
-  it("should correctly upgrade registry using multisig", async function () {
-    v2 = await EthaRegistryMockV2.new();
-    registry = await EthaRegistryMockV2.at(registry.address);
-
-    // pre-upgrade checks
-    await expectRevert(
-      registry.foo(),
-      "VM Exception while processing transaction: revert"
-    );
-
-    // upgrade
-    await expectRevert.unspecified(
-      proxyAdmin.upgrade(registry.address, v2.address, { from: random })
-    );
-    await proxyAdmin.upgrade(registry.address, v2.address, { from: multisig });
-
-    // after-upgrade checks
-    assert.equal(
-      await proxyAdmin.getProxyImplementation(registry.address),
-      v2.address
-    );
-
-    // Function now works in new implementation
-    assert.equal(await registry.foo(), "buzz");
-
-    // SW impl address is still on proxy storage
-    const impl = await registry.implementation();
-    assert.equal(impl, sw.address);
-  });
-
-  it("should get correct details after upgrade", async function () {
-    // after-upgrade checks
-    assert.equal(
-      await proxyAdmin.getProxyImplementation(registry.address),
-      v2.address
-    );
-
-    // Function now works in new implementation
-    assert.equal(await registry.foo(), "buzz");
-
-    // SW impl address is still on proxy storage
-    const impl = await registry.implementation();
-    assert.equal(impl, sw.address);
+    registered = await registry.logicProxies(compound.address);
+    assert(registered);
   });
 });

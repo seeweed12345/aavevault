@@ -1,4 +1,5 @@
-pragma solidity ^0.5.7;
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.7.0;
 
 interface ICurve {
     // solium-disable-next-line mixedcase

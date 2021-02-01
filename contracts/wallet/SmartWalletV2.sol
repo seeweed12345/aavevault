@@ -59,7 +59,7 @@ contract UserAuth is RegistryHelper {
 /**
  * @title User Owned Contract Wallet
  */
-contract SmartWallet is UserAuth {
+contract SmartWalletV2 is UserAuth {
     event LogMint(address erc20, uint256 tokenAmt, address owner);
     event LogRedeem(address erc20, uint256 tokenAmt, address owner);
     event LogDeposit(address erc20, uint256 tokenAmt);
@@ -153,4 +153,8 @@ contract SmartWallet is UserAuth {
         @dev allow ether deposits
      */
     receive() external payable {}
+
+    function foo() public pure returns(string memory){
+        return "bar";
+    }
 }
