@@ -164,24 +164,10 @@ contract SmartWallet is UserAuth {
         bytes32 _hash = getHash(data);
         require(isDelegate[address(recover(_hash,sign))], "Invalid Signer");
         address target =  address(this);
-        assembly {
-          let succeeded := delegatecall(
-              gas(),
-              target,
-              add(data, 0x20),
-              mload(data),
-              0,
-              0
-          )
 
-          switch iszero(succeeded)
-              case 1 {
-                  // throw if delegatecall failed
-                  let size := returndatasize()
-                  returndatacopy(0x00, 0x00, size)
-                  revert(0x00, size)
-              }
-      }
+        (bool success,) = target.call(data);
+        require(success);
+
         nonce = nonce.add(1);
     }
 
