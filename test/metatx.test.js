@@ -100,6 +100,37 @@ contract("Smart Wallet", ([walletOwner, externalWallet]) => {
     assert.equal(balance, toWei(500));
   });
 
+  it("should invest DAI to Aave Protocol", async function () {
+    const data = web3.eth.abi.encodeFunctionCall(
+      {
+        name: "mintAToken",
+        type: "function",
+        inputs: [
+          {
+            type: "address",
+            name: "erc20",
+          },
+          {
+            type: "uint256",
+            name: "tokenAmt",
+          },
+        ],
+      },
+      [DAI_ADDRESS, String(50e18)]
+    );
+
+    const tx = await wallet.execute([aave.address], [data], false, {
+      from: walletOwner,
+      gas: web3.utils.toHex(5e6),
+    });
+
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+
+    const aDaiContract = await IERC20.at(ADAI_ADDRESS);
+    const invested = await aDaiContract.balanceOf(wallet.address);
+    assert.equal(invested, String(50e18));
+  });
+
   it("should invest DAI to Aave Protocol using meta tx", async function () {
     const data = web3.eth.abi.encodeFunctionCall(
       {
