@@ -90,32 +90,57 @@ contract InverseResolver is Helpers {
      event LogVaultDepositAndWait(address erc20, uint256 tokenAmt);
      event LogVaultWithdraw(address erc20, uint256 tokenAmt);
      event LogVaultWithdrawPending(address erc20, uint256 tokenAmt);
-     event LogVaultClaim(uint256 claimAmount);
+     event LogVaultClaim(address vault, uint256 claimAmount);
 
     function deposit(address erc20, uint256 tokenAmt, address vault) external payable {
         require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
-            ERC20Interface token = ERC20Interface(erc20);
-            require(
-                tokenAmt <= token.balanceOf(address(this)),
-                "amountToBeDeposited-greaterThanAvailableBalance"
-            );
-            IVault ethaVault = IVault(vault);
-            setApproval(erc20, tokenAmt, vault);
-            ethaVault.deposit(tokenAmt);
+        require(
+            tokenAmt <= ERC20Interface(erc20).balanceOf(address(this)),
+            "amountToBeDeposited-greaterThanAvailableBalance"
+        );
+        setApproval(erc20, tokenAmt, vault);
+        IVault(vault).deposit(tokenAmt);
         emit LogVaultDeposit(erc20, tokenAmt);
     }
 
     function depositAndWait(address erc20, uint256 tokenAmt, address vault) external payable {
         require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
-            ERC20Interface token = ERC20Interface(erc20);
-            require(
-                tokenAmt <= token.balanceOf(address(this)),
-                "amountToBeDeposited-greaterThanAvailableBalance"
-            );
-            IVault ethaVault = IVault(vault);
-            setApproval(erc20, tokenAmt, vault);
-            ethaVault.depositAndWait(tokenAmt);
+        require(
+            tokenAmt <= ERC20Interface(erc20).balanceOf(address(this)),
+            "amountToBeDeposited-greaterThanAvailableBalance"
+        );
+        setApproval(erc20, tokenAmt, vault);
+        IVault(vault).depositAndWait(tokenAmt);
         emit LogVaultDepositAndWait(erc20, tokenAmt);
+    }
+
+    function withdrawPending(uint256 tokenAmt, address vault) external {
+        require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
+        IVault ethaVault = IVault(vault);
+        require(
+            tokenAmt <= ethaVault.pending(address(this)),
+            "amountToBeRedeemed-greaterThanAvailableBalance"
+        );
+        ethaVault.withdrawPending(tokenAmt);
+        emit LogVaultWithdrawPending(vault, tokenAmt);
+    }
+
+    function withdraw(uint256 tokenAmt, address vault) external {
+        require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
+        require(
+            tokenAmt <= ERC20Interface(vault).balanceOf(address(this)),
+            "amountToBeRedeemed-greaterThanAvailableBalance"
+        );
+        IVault(vault).withdraw(tokenAmt);
+        emit LogVaultWithdraw(vault, tokenAmt);
+    }
+
+    function claim(address vault) external {
+        IVault ethaVault = IVault(vault);
+        uint profit = ethaVault.unclaimedProfit(address(this));
+        require(profit > 0, "No-profit-available-to-calim");
+        ethaVault.claim();
+        emit LogVaultClaim(vault, profit);
     }
 
 }
