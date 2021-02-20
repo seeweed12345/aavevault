@@ -6,6 +6,7 @@
   "scripts": {
     "test": "hardhat test",
     "test-w": "hardhat test ./test/wallet.test.js",
+    "test-v": "hardhat test ./test/vesting.test.js",
     "compile": "hardhat compile",
     "deploy": "truffle migrate --reset --network etha",
     "deploy-main": "truffle migrate --reset --network mainnet",

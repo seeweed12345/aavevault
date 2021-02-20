@@ -11,7 +11,7 @@ import "./TokenTimelock.sol";
  */
 contract VestingFactory is CloneFactory, Ownable {
 
-    event Vested(address indexed beneficiary, address token, uint amount, uint releaseTime);
+    event Vested(address indexed beneficiary, address vestingContract, address token, uint amount, uint releaseTime);
 
     /// @dev implementation address of Token Vesting
     address public implementation;
@@ -23,6 +23,7 @@ contract VestingFactory is CloneFactory, Ownable {
     /// Throws if the owner already have a UserWallet
     /// @return vesting - address of new Token Vesting Contract
     function deployVesting(address beneficiary, IERC20 token, uint amount, uint releaseTime) public returns (TokenTimelock vesting) {
+        require(implementation != address(0));
         require(
             vestings[beneficiary] == TokenTimelock(0),
             "beneficiary exists"
@@ -37,7 +38,7 @@ contract VestingFactory is CloneFactory, Ownable {
 
         vestings[beneficiary] = vesting;
 
-        emit Vested(beneficiary, address(token), amount, releaseTime);
+        emit Vested(beneficiary, _vesting, address(token), amount, releaseTime);
     }
 
     /// @dev Change the address implementation of the Smart Wallet
