@@ -67,6 +67,8 @@ contract YTokenStrat is IStrat {
     }
 
     function totalYearnDeposits() public view returns (uint) {
+        console.log("balance", yToken.balanceOf(address(this)));
+        console.log("pricePerShare", yToken.pricePerShare());
         return yToken.balanceOf(address(this))
                 .mul(yToken.pricePerShare())
                 .div(10**yToken.decimals());
