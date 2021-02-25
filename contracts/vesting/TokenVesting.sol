@@ -42,7 +42,7 @@ contract TokenVesting {
         address beneficiary_,
         address token_
     ) external returns(bool){
-        require(beneficiary_ == address(0), "Already Initialized!");
+        require(beneficiary == address(0), "Already Initialized!");
         for(uint256 i = 0; i < periods.length; i++) {
             timeperiods.push(periods[i]);
             tokenAmounts.push(tokenAmounts_[i]);
@@ -68,6 +68,7 @@ contract TokenVesting {
             }
         }
         if(amount > 0) {
+            released = released.add(amount);
             IERC20(token).transfer(beneficiary, amount);
             emit Released(amount, periodsReleased);
         }
