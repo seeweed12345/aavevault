@@ -15,7 +15,7 @@ contract VestingFactory is CloneFactory, Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    event Vested(address indexed beneficiary, address vestingContract, address token, uint amount);
+    event Created(address beneficiary, address vestingContract);
 
     /// @dev implementation address of Token Vesting
     address public implementation;
@@ -40,22 +40,11 @@ contract VestingFactory is CloneFactory, Ownable {
 
         address _vesting = address(uint160(createClone(implementation)));
         vesting = TokenVesting(_vesting);
-        require(vesting.initialize(periods, tokenAmounts, beneficiary, token), "Initialization failed");
-
-        // Calculate amount of tokens to vest
-        uint amount = 0;
-        for(uint i=0; i < tokenAmounts.length; i++){
-            amount = amount.add(tokenAmounts[i]);
-        }
-
-        // Fund Token Vesting contract
-        // IERC20(token).safeTransferFrom(msg.sender, _vesting, amount);
+        require(vesting.initialize(periods, tokenAmounts, beneficiary, token), "!Initialized");
 
         vestings[beneficiary] = vesting;
 
-        // assert(IERC20(token).balanceOf(_vesting) == amount);
-
-        emit Vested(beneficiary, _vesting, address(token), amount);
+        emit Created(beneficiary, _vesting);
     }
 
     /// @dev Change the address implementation of the Smart Wallet
