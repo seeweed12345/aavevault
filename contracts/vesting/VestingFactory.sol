@@ -27,9 +27,9 @@ contract VestingFactory is CloneFactory, Ownable {
     /// Throws if the owner already have a UserWallet
     /// @return vesting - address of new Token Vesting Contract
     function deployVesting(
-        uint256[] memory periods, 
-        uint256[] memory tokenAmounts, 
-        address beneficiary, 
+        uint256[] memory periods,
+        uint256[] memory tokenAmounts,
+        address beneficiary,
         address token
     ) public returns (TokenVesting vesting) {
         require(implementation != address(0));
@@ -49,11 +49,11 @@ contract VestingFactory is CloneFactory, Ownable {
         }
 
         // Fund Token Vesting contract
-        IERC20(token).safeTransferFrom(msg.sender, _vesting, amount);
+        // IERC20(token).safeTransferFrom(msg.sender, _vesting, amount);
 
         vestings[beneficiary] = vesting;
 
-        assert(IERC20(token).balanceOf(_vesting) == amount);
+        // assert(IERC20(token).balanceOf(_vesting) == amount);
 
         emit Vested(beneficiary, _vesting, address(token), amount);
     }
