@@ -22,6 +22,8 @@ const AMOUNT_VESTING = toWei("1000");
 const TOTAL_PERIODS = 12;
 const PERIOD_DAYS = 30;
 const PERCENTAGE_FOR_FIRST_RELEASE = 20;
+
+let firstClaimAmount;
 let amountPerPeriod = 0;
 
 contract("Vesting", ([owner, alice, bob, random]) => {
@@ -49,12 +51,12 @@ contract("Vesting", ([owner, alice, bob, random]) => {
 
   it("should deploy a token vesting contract", async function () {
     // First Claim 20% of Total
-    const firstClaimAmount = toBN(AMOUNT_VESTING)
+    const _firstClaimAmount = toBN(AMOUNT_VESTING)
       .mul(toBN(PERCENTAGE_FOR_FIRST_RELEASE))
       .div(toBN(100));
 
     // Remaining for vested periods
-    const leftAmount = toBN(AMOUNT_VESTING).sub(toBN(firstClaimAmount));
+    const leftAmount = toBN(AMOUNT_VESTING).sub(toBN(_firstClaimAmount));
 
     // Total Amount divided into 12 claims
     const amounts = Array(12).fill(
@@ -65,6 +67,7 @@ contract("Vesting", ([owner, alice, bob, random]) => {
 
     // Add dust to first claim
     amounts[0] = amounts[0].add(new BN(AMOUNT_VESTING).sub(totalAmount));
+    firstClaimAmount = amounts[0];
 
     amountPerPeriod = amounts[1];
 
@@ -112,13 +115,14 @@ contract("Vesting", ([owner, alice, bob, random]) => {
     instance = await TokenVesting.at(vested);
 
     //Transfer tokens to Vesting contract
-    await etha.transfer(vested, toWei("1000"));
+    await etha.transfer(vested, AMOUNT_VESTING);
 
     const token = await instance.token();
     const beneficiary = await instance.beneficiary();
     const firstPeriod = await instance.timeperiods(0);
     const secondPeriod = await instance.timeperiods(1);
     const released = await instance.released();
+    const releaseableAmount = await instance.releaseableAmount();
     const balance = await etha.balanceOf(vested);
 
     const _secondPeriod = Number(now) + Number(time.duration.days(30));
@@ -127,21 +131,31 @@ contract("Vesting", ([owner, alice, bob, random]) => {
     assert.equal(firstPeriod, now);
     assert.equal(secondPeriod, _secondPeriod);
     assert.equal(released, 0);
-    assert.equal(balance, toWei("1000"));
+    assert.equal(String(releaseableAmount), String(firstClaimAmount));
+    assert.equal(balance, AMOUNT_VESTING);
   });
 
   it("should be able to release tokens from vesting contract when deployed", async function () {
     const initialBalance = await etha.balanceOf(alice);
     assert.equal(initialBalance, 0);
 
-    // Trigger token release
+    // Trigger token release by another user
     await instance.release({ from: bob });
 
     const finalBalance = await etha.balanceOf(alice);
+    console.log(String(finalBalance));
     this.claimed = fromWei(finalBalance);
     this.claimedInWei = finalBalance;
     console.log("\tClaimed ETHA at Deployment:", fromWei(finalBalance));
     assert(fromWei(finalBalance) > 0);
+  });
+
+  it("should not be able to release tokens for same period when already claimed", async function () {
+    // Trigger token release
+    await instance.release({ from: alice });
+
+    const currentBalance = await etha.balanceOf(alice);
+    assert.equal(fromWei(currentBalance), this.claimed);
   });
 
   it("should be able to release tokens from vesting contract after 30 days", async function () {
@@ -166,12 +180,13 @@ contract("Vesting", ([owner, alice, bob, random]) => {
     this.claimed = fromWei(finalBalance);
   });
 
-  it("should not be able to release tokens before 30 days", async function () {
-    // 10 more months
+  it("should not be able to release more tokens before next period", async function () {
+    // 20 more days
     await time.increase(time.duration.days(20));
+    const initialBalance = await etha.balanceOf(alice);
+
     // Trigger token release
     await instance.release({ from: alice });
-    const initialBalance = await etha.balanceOf(alice);
     const finalBalance = await etha.balanceOf(alice);
     console.log(
       "\tTotal Claimed ETHA tokens:",
@@ -181,7 +196,7 @@ contract("Vesting", ([owner, alice, bob, random]) => {
     assert(fromWei(finalBalance) == fromWei(initialBalance));
   });
 
-  it("should be able to release all tokens", async function () {
+  it("should be able to release all tokens from multiple periods", async function () {
     // 10 more months
     await time.increase(time.duration.days(10 * 30));
 
