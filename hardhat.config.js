@@ -24,10 +24,14 @@ module.exports = {
       url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
       accounts: [process.env.MAINNET_PRIVKEY],
     },
+    rinkeby: {
+      url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+      accounts: [process.env.RINKEBY_PRIVATE_KEY],
+    },
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API,
-    // url: "https://api-rinkeby.etherscan.io/",
+    url: "https://api-rinkeby.etherscan.io/",
   },
   gasReporter: {
     currency: "USD",

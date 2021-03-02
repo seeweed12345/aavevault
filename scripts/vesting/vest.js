@@ -13,8 +13,8 @@ const AMOUNT_VESTING = toWei("1000");
 const TOTAL_PERIODS = 12;
 const PERIOD_DAYS = 30;
 const PERCENTAGE_FOR_FIRST_RELEASE = 20;
-const USER = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
-const ETHA = "0x59e9261255644c411afdd00bd89162d09d862e38";
+const USER = "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1";
+const ETHA = "0x4198270a8e152b1a1a8e43e954426d60ad2b1199";
 
 const getParams = async () => {
   const { timestamp: now } = await web3.eth.getBlock();
@@ -63,10 +63,12 @@ async function main() {
   console.log("Deploying vesting contract for:", USER);
 
   const factory = await VestingFactory.at(
-    "0x5b1869D9A4C187F2EAa108f3062412ecf0526b24"
+    "0x2226b9E355324537Ca0af203d89e26e818e88Bf7"
   );
 
   const { vestingPeriods, amounts } = await getParams();
+
+  console.log(amounts);
 
   // Deploy Token Vesting for Alice
   const { receipt } = await factory.deployVesting(
