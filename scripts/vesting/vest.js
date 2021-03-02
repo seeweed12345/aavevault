@@ -2,6 +2,7 @@ const VestingFactory = artifacts.require("VestingFactory");
 const TokenVesting = artifacts.require("TokenVesting");
 
 const { time } = require("@openzeppelin/test-helpers");
+const { Contract } = require("ethers");
 
 // HELPERS
 const toWei = (value) => web3.utils.toWei(String(value));
@@ -13,11 +14,12 @@ const AMOUNT_VESTING = toWei("1000");
 const TOTAL_PERIODS = 12;
 const PERIOD_DAYS = 30;
 const PERCENTAGE_FOR_FIRST_RELEASE = 20;
-const USER = "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1";
-const ETHA = "0x4198270a8e152b1a1a8e43e954426d60ad2b1199";
+const USER = "0x8A6A6ebBA7bF42E0FD85a0279cC53343f840833D";
+const ETHA = "0x59e9261255644c411afdd00bd89162d09d862e38";
 
 const getParams = async () => {
-  const { timestamp: now } = await web3.eth.getBlock();
+  // const { timestamp: now } = await web3.eth.getBlock();
+  const now = Math.floor(Date.now() / 1000);
 
   // First Claim 20% of Total
   const _firstClaimAmount = toBN(AMOUNT_VESTING)
@@ -68,8 +70,6 @@ async function main() {
 
   const { vestingPeriods, amounts } = await getParams();
 
-  console.log(amounts);
-
   // Deploy Token Vesting for Alice
   const { receipt } = await factory.deployVesting(
     vestingPeriods,
@@ -78,8 +78,12 @@ async function main() {
     ETHA
   );
 
+  const vestedContract = await factory.vestings(USER);
+
+  console.log("\nVesting Contract:", vestedContract);
+
   console.log(
-    "\nTransaction:",
+    "Transaction:",
     `https://etherscan.io/tx/${receipt.transactionHash}`
   );
   console.log("Gas Used:", receipt.gasUsed);
