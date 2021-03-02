@@ -10,6 +10,8 @@
     "compile": "hardhat compile",
     "deploy": "truffle migrate --reset --network etha",
     "deploy-main": "truffle migrate --reset --network mainnet",
+    "factory": "hardhat run scripts/vesting/deployFactory.js --network local",
+    "vest": "hardhat run scripts/vesting/vest.js --network local",
     "reset": "npm run deploy3 && npm run complete",
     "complete": "node scripts/complete",
     "uniswap": "node scripts/uniswap",

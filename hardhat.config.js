@@ -17,6 +17,9 @@ module.exports = {
       //   blockNumber: 11765131,
       // },
     },
+    local: {
+      url: "http://localhost:8545",
+    },
     live: {
       url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
       accounts: [process.env.MAINNET_PRIVKEY],
