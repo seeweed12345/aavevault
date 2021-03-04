@@ -1,3 +1,5 @@
+const prompt = require("prompt-sync")();
+
 const VestingFactory = artifacts.require("VestingFactory");
 
 const { time } = require("@openzeppelin/test-helpers");
@@ -62,35 +64,42 @@ async function main() {
   console.log("Deploying vesting contract for:", USER);
 
   const factory = await VestingFactory.at(
-    "0x2226b9E355324537Ca0af203d89e26e818e88Bf7"
+    "0x5b1869D9A4C187F2EAa108f3062412ecf0526b24"
   );
 
   const { vestingPeriods, amounts } = await getParams();
 
-  // Deploy Token Vesting for Alice
-  const { receipt } = await factory.deployVesting(
-    vestingPeriods,
-    amounts,
-    USER,
-    ETHA
+  const response = prompt(
+    `\nWant to deploy vesting contract with this schedule? (y/n) `
   );
+  if (response === "y" || response === "Y") {
+    // Deploy Token Vesting for Alice
+    const { receipt } = await factory.deployVesting(
+      vestingPeriods,
+      amounts,
+      USER,
+      ETHA
+    );
 
-  const vestedContract = await factory.vestings(USER);
+    const vestedContract = await factory.getVestingContract(USER);
 
-  console.log("\nVesting Contract:", vestedContract);
+    console.log("\nVesting Contract:", vestedContract);
 
-  console.log(
-    "Transaction:",
-    `https://etherscan.io/tx/${receipt.transactionHash}`
-  );
-  console.log("Gas Used:", receipt.gasUsed);
+    console.log(
+      "Transaction:",
+      `https://etherscan.io/tx/${receipt.transactionHash}`
+    );
+    console.log("Gas Used:", receipt.gasUsed);
 
-  console.log("\nDone!");
+    console.log("\nDone!");
+  } else {
+    process.exit(0);
+  }
 }
 
 main()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error(error);
+    console.error(error.message);
     process.exit(1);
   });
