@@ -55,7 +55,9 @@ const getParams = async () => {
       })`
     );
   }
-  console.log("\n\tTOTAL VESTED:", fromWei(AMOUNT_VESTING));
+  console.log("\n\tUSER:", USER);
+  console.log("\n\tFIRST RELEASE:", PERCENTAGE_FOR_FIRST_RELEASE, "%");
+  console.log("\n\tTOTAL VESTED:", fromWei(AMOUNT_VESTING), "ETHA");
 
   return { vestingPeriods, amounts };
 };
