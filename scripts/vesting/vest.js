@@ -1,8 +1,6 @@
 const VestingFactory = artifacts.require("VestingFactory");
-const TokenVesting = artifacts.require("TokenVesting");
 
 const { time } = require("@openzeppelin/test-helpers");
-const { Contract } = require("ethers");
 
 // HELPERS
 const toWei = (value) => web3.utils.toWei(String(value));
@@ -18,7 +16,6 @@ const USER = "0x8A6A6ebBA7bF42E0FD85a0279cC53343f840833D";
 const ETHA = "0x59e9261255644c411afdd00bd89162d09d862e38";
 
 const getParams = async () => {
-  // const { timestamp: now } = await web3.eth.getBlock();
   const now = Math.floor(Date.now() / 1000);
 
   // First Claim 20% of Total

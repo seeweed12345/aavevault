@@ -7,30 +7,28 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /**
  * @dev A token holder contract that will allow a beneficiary to extract the
  * tokens after a given release time.
- *
- * Useful for simple vesting schedules like "advisors get all of their tokens
- * after 1 year".
  */
 contract TokenVesting {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
-    /// @notice Address who will receive tokens
-    address public beneficiary;
+    // Address who will receive tokens
+    address _beneficiary;
 
-    /// @notice Amount of tokens released so far
-    uint256 public released;
+    // Amount of tokens released so far
+    uint256 released;
 
-    /// @notice Token address to release
-    IERC20 public token;
+    // Token address to release
+    IERC20 _token;
 
-    /// @notice List of dates(in unix timestamp) on which tokens will be released
-    uint256[] public timeperiods;
+    // List of dates(in unix timestamp) on which tokens will be released
+    uint256[] timeperiods;
 
-    /// @notice Number of tokens to be released after each dates
-    uint256[] public tokenAmounts;
+    // Number of tokens to be released after each dates
+    uint256[] tokenAmounts;
 
-    /// @notice Total number of periods released
-    uint256 public periodsReleased;
+    // Total number of periods released
+    uint256 periodsReleased;
 
     /// @notice Release Event
     event Released(uint256 amount, uint256 periods);
@@ -39,16 +37,16 @@ contract TokenVesting {
     function initialize(
         uint256[] memory periods,
         uint256[] memory tokenAmounts_,
-        address beneficiary_,
-        address token_
+        address beneficiary,
+        address token
     ) external returns(bool){
-        require(beneficiary == address(0), "Already Initialized!");
+        require(_beneficiary == address(0), "Already Initialized!");
         for(uint256 i = 0; i < periods.length; i++) {
             timeperiods.push(periods[i]);
             tokenAmounts.push(tokenAmounts_[i]);
         }
-        beneficiary = beneficiary_;
-        token = IERC20(token_);
+        _beneficiary = beneficiary;
+        _token = IERC20(token);
 
         return true;
     }
@@ -69,24 +67,29 @@ contract TokenVesting {
         }
         if(amount > 0) {
             released = released.add(amount);
-            IERC20(token).transfer(beneficiary, amount);
+            IERC20(_token).safeTransfer(_beneficiary, amount);
             emit Released(amount, periodsReleased);
         }
 
     }
 
-    /// @notice Fetch amount that can be released at this moment
-    function releaseableAmount() public view returns(uint) {
-        uint256 amount = 0;
-        for (uint256 i = periodsReleased; i < timeperiods.length; i++) {
-            if (timeperiods[i] <= block.timestamp) {
-                amount = amount.add(tokenAmounts[i]);
-            }
-            else {
-                break;
-            }
-        }
-        return amount;
+    /// @notice Get release amount and timestamp for a given period index
+    function getPeriodData(uint index) external view returns(uint amount, uint timestamp){
+        amount = tokenAmounts[index];
+        timestamp = timeperiods[index];
+    }
+
+    /// @notice Get release amount and timestamp for a given period index
+    function getGlobalData() 
+        external 
+        view 
+        returns(uint releasedPeriods, uint totalPeriods, uint totalReleased, address beneficiary, address token)
+    {
+        releasedPeriods = periodsReleased;
+        totalPeriods = timeperiods.length;
+        totalReleased = released;
+        beneficiary = _beneficiary;
+        token = address(_token);
     }
 
 }
