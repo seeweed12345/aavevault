@@ -39,20 +39,20 @@ const getParams = async () => {
 
   amountPerPeriod = amounts[1];
 
-  // Vesting periods (first claim now, rest every 30 days)
-  let vestingPeriods = [Number(now)];
+  // Vesting periods (first March 8th at 11:00 CET (10am UTC), rest every 30 days)
+  let vestingPeriods = [1615197600];
   for (let i = 1; i < TOTAL_PERIODS; i++) {
     vestingPeriods.push(
-      Number(now) + Number(time.duration.days(i * PERIOD_DAYS))
+      vestingPeriods[0] + Number(time.duration.days(i * PERIOD_DAYS))
     );
   }
 
   console.log("\n\t=== VESTING SCHEDULE ===\n");
   for (const i in amounts) {
     console.log(
-      `\tPeriod ${i}: ${Number(fromWei(amounts[i])).toFixed(2)} (${
-        i == 0 ? "Now!" : new Date(vestingPeriods[i] * 1000).toUTCString()
-      })`
+      `\tPeriod ${i}: ${Number(fromWei(amounts[i])).toFixed(2)} (${new Date(
+        vestingPeriods[i] * 1000
+      ).toUTCString()})`
     );
   }
   console.log("\n\tUSER:", USER);

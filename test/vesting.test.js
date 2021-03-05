@@ -73,11 +73,11 @@ contract("Vesting", ([owner, alice, bob, charlie, random]) => {
 
     amountPerPeriod = amounts[1];
 
-    // Vesting periods (first claim now, rest every 30 days)
-    let vestingPeriods = [Number(now)];
+    // Vesting periods (first March 8th at 11:00 CET (10am UTC), rest every 30 days)
+    let vestingPeriods = [1615197600];
     for (let i = 1; i < TOTAL_PERIODS; i++) {
       vestingPeriods.push(
-        Number(now) + Number(time.duration.days(i * PERIOD_DAYS))
+        vestingPeriods[0] + Number(time.duration.days(i * PERIOD_DAYS))
       );
     }
 
@@ -86,9 +86,9 @@ contract("Vesting", ([owner, alice, bob, charlie, random]) => {
     console.log("\n\t=== VESTING SCHEDULE ===\n");
     for (const i in amounts) {
       console.log(
-        `\tPeriod ${i}: ${Number(fromWei(amounts[i])).toFixed(2)} (${
-          i == 0 ? "Now!" : new Date(vestingPeriods[i] * 1000).toUTCString()
-        })`
+        `\tPeriod ${i}: ${Number(fromWei(amounts[i])).toFixed(2)} (${new Date(
+          vestingPeriods[i] * 1000
+        ).toUTCString()})`
       );
     }
     console.log("\n\tTOTAL VESTED:", fromWei(AMOUNT_VESTING));
@@ -130,7 +130,7 @@ contract("Vesting", ([owner, alice, bob, charlie, random]) => {
     assert.equal(token, etha.address);
     assert.equal(beneficiary, alice);
     assert.equal(totalReleased, 0);
-    assert.equal(String(releaseableAmount), String(firstClaimAmount));
+    assert.equal(releaseableAmount, 0);
     assert.equal(balance, AMOUNT_VESTING);
   });
 
@@ -147,7 +147,10 @@ contract("Vesting", ([owner, alice, bob, charlie, random]) => {
     );
   });
 
-  it("should be able to release some tokens from vesting contract when deployed", async function () {
+  it("should be able to release some tokens from vesting contract when first period is reached", async function () {
+    // 3 days go by..
+    await time.increase(time.duration.days(3));
+
     const initialBalance = await etha.balanceOf(alice);
     assert.equal(initialBalance, 0);
 
@@ -234,20 +237,29 @@ contract("Vesting", ([owner, alice, bob, charlie, random]) => {
     assert.equal(totalReleased, AMOUNT_VESTING);
   });
 
-  it("should change state in implementation contract", async function () {
+  it("should change state in implementation contract with fake token", async function () {
+    const fakeToken = await RewardsToken.new();
+    await fakeToken.mint(implementation.address, toWei(10000));
+
     await implementation.initialize(
       this.vestingPeriods,
       this.amounts,
       bob,
-      etha.address
+      fakeToken.address
     );
 
-    const { beneficiary } = await implementation.getGlobalData();
+    await implementation.release({ from: bob });
+
+    const {
+      beneficiary,
+      releasedPeriods,
+    } = await implementation.getGlobalData();
 
     assert.equal(beneficiary, bob);
+    assert.equal(releasedPeriods, 12);
   });
 
-  it("should deploy a second token vesting contract", async function () {
+  it("should deploy a second token vesting contract correctly", async function () {
     // Deploy Token Vesting for Charlie
     await factory.deployVesting(
       this.vestingPeriods,
@@ -262,8 +274,16 @@ contract("Vesting", ([owner, alice, bob, charlie, random]) => {
     const vested = await factory.getVestingContract(charlie);
     instance = await TokenVesting.at(vested);
 
-    const { beneficiary } = await instance.getGlobalData();
+    const {
+      releasedPeriods,
+      totalReleased,
+      beneficiary,
+      token,
+    } = await instance.getGlobalData();
 
+    assert.equal(releasedPeriods, 0);
+    assert.equal(totalReleased, 0);
     assert.equal(beneficiary, charlie);
+    assert.equal(token, etha.address);
   });
 });
