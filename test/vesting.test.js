@@ -26,7 +26,7 @@ const PERCENTAGE_FOR_FIRST_RELEASE = 20;
 let firstClaimAmount;
 let amountPerPeriod = 0;
 
-contract("Vesting", ([owner, alice, bob, random]) => {
+contract("Vesting", ([owner, alice, bob, charlie, random]) => {
   let etha, factory, implementation, instance, now;
 
   before(async function () {
@@ -163,7 +163,10 @@ contract("Vesting", ([owner, alice, bob, random]) => {
 
   it("should not be able to release tokens for same period when already claimed", async function () {
     // Trigger token release
-    await instance.release({ from: alice });
+    await expectRevert(
+      instance.release({ from: alice }),
+      "Nothing to release yet"
+    );
 
     const currentBalance = await etha.balanceOf(alice);
     assert.equal(fromWei(currentBalance), this.claimed);
@@ -197,7 +200,10 @@ contract("Vesting", ([owner, alice, bob, random]) => {
     const initialBalance = await etha.balanceOf(alice);
 
     // Trigger token release
-    await instance.release({ from: alice });
+    await expectRevert(
+      instance.release({ from: alice }),
+      "Nothing to release yet"
+    );
     const finalBalance = await etha.balanceOf(alice);
     console.log(
       "\tClaimed ETHA tokens in same period:",
@@ -226,5 +232,38 @@ contract("Vesting", ([owner, alice, bob, random]) => {
 
     assert.equal(vestedBalance, 0);
     assert.equal(totalReleased, AMOUNT_VESTING);
+  });
+
+  it("should change state in implementation contract", async function () {
+    await implementation.initialize(
+      this.vestingPeriods,
+      this.amounts,
+      bob,
+      etha.address
+    );
+
+    const { beneficiary } = await implementation.getGlobalData();
+
+    assert.equal(beneficiary, bob);
+  });
+
+  it("should deploy a second token vesting contract", async function () {
+    // Deploy Token Vesting for Charlie
+    await factory.deployVesting(
+      this.vestingPeriods,
+      this.amounts,
+      charlie,
+      etha.address,
+      {
+        from: owner,
+      }
+    );
+
+    const vested = await factory.getVestingContract(charlie);
+    instance = await TokenVesting.at(vested);
+
+    const { beneficiary } = await instance.getGlobalData();
+
+    assert.equal(beneficiary, charlie);
   });
 });

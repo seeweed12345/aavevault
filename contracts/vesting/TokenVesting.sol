@@ -36,15 +36,13 @@ contract TokenVesting {
     /// @notice Initialize token vesting parameters
     function initialize(
         uint256[] memory periods,
-        uint256[] memory tokenAmounts_,
+        uint256[] memory amounts,
         address beneficiary,
         address token
     ) external returns(bool){
         require(_beneficiary == address(0), "Already Initialized!");
-        for(uint256 i = 0; i < periods.length; i++) {
-            timeperiods.push(periods[i]);
-            tokenAmounts.push(tokenAmounts_[i]);
-        }
+        timeperiods = periods;
+        tokenAmounts = amounts;
         _beneficiary = beneficiary;
         _token = IERC20(token);
 
@@ -65,12 +63,11 @@ contract TokenVesting {
                 break;
             }
         }
-        if(amount > 0) {
-            released = released.add(amount);
-            IERC20(_token).safeTransfer(_beneficiary, amount);
-            emit Released(amount, periodsReleased);
-        }
+        require(amount > 0, "Nothing to release yet");        
+        released = released.add(amount);
+        IERC20(_token).safeTransfer(_beneficiary, amount);
 
+        emit Released(amount, periodsReleased);        
     }
 
     /// @notice Get release amount and timestamp for a given period index

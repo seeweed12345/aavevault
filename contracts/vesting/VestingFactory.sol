@@ -2,8 +2,9 @@
 pragma solidity 0.7.3;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../utils/CloneFactory.sol";
-import "./TokenVesting.sol";
+import "../interfaces/IVesting.sol";
 
 /**
  * @dev Deploys new vesting contracts
@@ -18,29 +19,27 @@ contract VestingFactory is CloneFactory, Ownable {
     address private implementation;
 
     /// @dev Address to Token Vesting map
-    mapping(address => TokenVesting) vestings;
+    mapping(address => address) vestings;
 
-    /// @dev Deploys a new proxy instance and sets custom owner of proxy
+    /// @dev Deploys a new contract instance and sets custom vesting details
     /// Throws if the owner already have a Token Vesting contract
-    /// @return vesting - address of new Token Vesting Contract
     function deployVesting(
         uint256[] memory periods,
         uint256[] memory tokenAmounts,
         address beneficiary,
         address token
-    ) public returns (TokenVesting vesting) {
+    ) external onlyOwner {
         require(implementation != address(0));
         require(
-            vestings[beneficiary] == TokenVesting(0),
+            vestings[beneficiary] == address(0),
             "beneficiary exists"
         );
         require(periods.length == tokenAmounts.length, "Length mismatch");
 
         address _vesting = address(uint160(createClone(implementation)));
-        vesting = TokenVesting(_vesting);
-        require(vesting.initialize(periods, tokenAmounts, beneficiary, token), "!Initialized");
+        require(IVesting(_vesting).initialize(periods, tokenAmounts, beneficiary, token), "!Initialized");
 
-        vestings[beneficiary] = vesting;
+        vestings[beneficiary] = _vesting;
 
         emit Created(beneficiary, _vesting);
     }
@@ -62,8 +61,8 @@ contract VestingFactory is CloneFactory, Ownable {
     }
 
     /// @notice Fetch amount that can be currently released by a certain address
-    function releaseableAmount(address beneficiary) public view returns(uint) {
-        TokenVesting _vesting = vestings[beneficiary];
+    function releaseableAmount(address beneficiary) external view returns(uint) {
+        IVesting _vesting = IVesting(vestings[beneficiary]);
 
         (uint releasedPeriods, uint totalPeriods,,,) = _vesting.getGlobalData();
 
