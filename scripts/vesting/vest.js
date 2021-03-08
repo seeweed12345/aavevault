@@ -10,16 +10,19 @@ const fromWei = (value) => Number(web3.utils.fromWei(String(value)));
 const toBN = (value) => new web3.utils.BN(String(value));
 
 // PARAMS
-const AMOUNT_VESTING = toWei("1000");
+const ETHA = "0x59e9261255644c411afdd00bd89162d09d862e38";
 const TOTAL_PERIODS = 12;
 const PERIOD_DAYS = 30;
+
 const PERCENTAGE_FOR_FIRST_RELEASE = 20;
-const USER = "0x8A6A6ebBA7bF42E0FD85a0279cC53343f840833D";
-const ETHA = "0x59e9261255644c411afdd00bd89162d09d862e38";
+const AMOUNT_VESTING = toWei(300000);
+const USER = "";
+
+function timeout(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 const getParams = async () => {
-  const now = Math.floor(Date.now() / 1000);
-
   // First Claim 20% of Total
   const _firstClaimAmount = toBN(AMOUNT_VESTING)
     .mul(toBN(PERCENTAGE_FOR_FIRST_RELEASE))
@@ -37,9 +40,11 @@ const getParams = async () => {
   amounts[0] = amounts[0].add(toBN(AMOUNT_VESTING).sub(totalAmount));
   firstClaimAmount = amounts[0];
 
-  amountPerPeriod = amounts[1];
+  const totalAmount2 = amounts.reduce((a, b) => a.add(b));
 
-  // Vesting periods (first March 8th at 11:00 CET (10am UTC), rest every 30 days)
+  assert.equal(totalAmount2, AMOUNT_VESTING);
+
+  // Vesting periods (first March 8th at 13:00 CET (12:00 UTC), rest every 30 days)
   let vestingPeriods = [1615197600];
   for (let i = 1; i < TOTAL_PERIODS; i++) {
     vestingPeriods.push(
@@ -57,7 +62,11 @@ const getParams = async () => {
   }
   console.log("\n\tUSER:", USER);
   console.log("\n\tFIRST RELEASE:", PERCENTAGE_FOR_FIRST_RELEASE, "%");
-  console.log("\n\tTOTAL VESTED:", fromWei(AMOUNT_VESTING), "ETHA");
+  console.log(
+    "\n\tTOTAL VESTED:",
+    fromWei(totalAmount2).toLocaleString(),
+    "ETHA"
+  );
 
   return { vestingPeriods, amounts };
 };
@@ -66,7 +75,7 @@ async function main() {
   console.log("Deploying vesting contract for:", USER);
 
   const factory = await VestingFactory.at(
-    "0x5b1869D9A4C187F2EAa108f3062412ecf0526b24"
+    "0xd6aB735E3E2A1dd7deae5959D868057C284CecBc"
   );
 
   const { vestingPeriods, amounts } = await getParams();
@@ -75,7 +84,7 @@ async function main() {
     `\nWant to deploy vesting contract with this schedule? (y/n) `
   );
   if (response === "y" || response === "Y") {
-    // Deploy Token Vesting for Alice
+    console.log("Deploying vesting contract...");
     const { receipt } = await factory.deployVesting(
       vestingPeriods,
       amounts,
@@ -83,15 +92,17 @@ async function main() {
       ETHA
     );
 
-    const vestedContract = await factory.getVestingContract(USER);
-
-    console.log("\nVesting Contract:", vestedContract);
-
     console.log(
       "Transaction:",
       `https://etherscan.io/tx/${receipt.transactionHash}`
     );
     console.log("Gas Used:", receipt.gasUsed);
+
+    await timeout(3000);
+
+    const vestedContract = await factory.getVestingContract(USER);
+
+    console.log("\nVesting Contract:", vestedContract);
 
     console.log("\nDone!");
   } else {

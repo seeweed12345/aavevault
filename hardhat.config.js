@@ -23,13 +23,15 @@ module.exports = {
     live: {
       url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
       accounts: [process.env.MAINNET_PRIVKEY],
-      gasPrice: 85e9,
+      gasPrice: 110e9,
+      gas: 1e6,
       timeout: 300000, // 5 min
     },
     rinkeby: {
       url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
       accounts: [process.env.RINKEBY_PRIVATE_KEY],
-      gasPrice: 90e9,
+      gasPrice: 10e9,
+      gas: 6e6,
     },
   },
   etherscan: {
