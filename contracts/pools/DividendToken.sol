@@ -20,10 +20,10 @@ contract DividendToken is ERC20 {
   
   IERC20 public target;
 
-  // With `magnitude`, we can properly distribute dividends even if the amount of received target is small.
-  // For more discussion about choosing the value of `magnitude`,
+  // With `MAGNITUDE`, we can properly distribute dividends even if the amount of received target is small.
+  // For more discussion about choosing the value of `MAGNITUDE`,
   //  see https://github.com/ethereum/EIPs/issues/1726#issuecomment-472352728
-  uint256 constant internal magnitude = 2**128;
+  uint256 constant internal MAGNITUDE = 2**128;
 
   uint256 internal magnifiedDividendPerShare;
 
@@ -52,8 +52,8 @@ contract DividendToken is ERC20 {
   /// About undistributed target tokens:
   ///   In each distribution, there is a small amount of target not distributed,
   ///     the magnified amount of which is
-  ///     `(amount * magnitude) % totalSupply()`.
-  ///   With a well-chosen `magnitude`, the amount of undistributed target
+  ///     `(amount * MAGNITUDE) % totalSupply()`.
+  ///   With a well-chosen `MAGNITUDE`, the amount of undistributed target
   ///     (de-magnified) in a distribution can be less than 1 wei.
   ///   We can actually keep track of the undistributed target in a distribution
   ///     and try to distribute it in the next distribution,
@@ -64,7 +64,7 @@ contract DividendToken is ERC20 {
     require(amount > 0);
 
     magnifiedDividendPerShare = magnifiedDividendPerShare.add(
-      (amount).mul(magnitude) / totalSupply()
+      (amount).mul(MAGNITUDE) / totalSupply()
     );
 
     target.safeTransferFrom(msg.sender, address(this), amount);
@@ -86,7 +86,7 @@ contract DividendToken is ERC20 {
   /// @notice View the amount of dividend in wei that an address can withdraw.
   /// @param _owner The address of a token holder.
   /// @return The amount of dividend in wei that `_owner` can withdraw.
-  function dividendOf(address _owner) public view returns(uint256) {
+  function dividendOf(address _owner) external view returns(uint256) {
     return withdrawableDividendOf(_owner);
   }
 
@@ -100,19 +100,19 @@ contract DividendToken is ERC20 {
   /// @notice View the amount of dividend in wei that an address has withdrawn.
   /// @param _owner The address of a token holder.
   /// @return The amount of dividend in wei that `_owner` has withdrawn.
-  function withdrawnDividendOf(address _owner) public view returns(uint256) {
+  function withdrawnDividendOf(address _owner) external view returns(uint256) {
     return withdrawnDividends[_owner];
   }
 
 
   /// @notice View the amount of dividend in wei that an address has earned in total.
   /// @dev accumulativeDividendOf(_owner) = withdrawableDividendOf(_owner) + withdrawnDividendOf(_owner)
-  /// = (magnifiedDividendPerShare * balanceOf(_owner) + magnifiedDividendCorrections[_owner]) / magnitude
+  /// = (magnifiedDividendPerShare * balanceOf(_owner) + magnifiedDividendCorrections[_owner]) / MAGNITUDE
   /// @param _owner The address of a token holder.
   /// @return The amount of dividend in wei that `_owner` has earned in total.
   function accumulativeDividendOf(address _owner) public view returns(uint256) {
     return magnifiedDividendPerShare.mul(balanceOf(_owner)).toInt256Safe()
-      .add(magnifiedDividendCorrections[_owner]).toUint256Safe() / magnitude;
+      .add(magnifiedDividendCorrections[_owner]).toUint256Safe() / MAGNITUDE;
   }
 
   /// @dev Internal function that transfer tokens from one address to another.

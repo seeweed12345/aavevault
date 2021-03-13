@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 /**
  * @title Registry related helper functions
  */
-contract RegistryHelper {
+contract RegistryHelper {  
 
     /**
      * @dev address registry of system, stores logic and wallet addresses
@@ -32,6 +32,8 @@ contract RegistryHelper {
  */
 contract UserAuth is RegistryHelper {
 
+    address public owner;
+
     /**
      * @dev store allowed addresses to use the smart wallet
      */
@@ -43,11 +45,17 @@ contract UserAuth is RegistryHelper {
     uint public nonce;
 
     /**
+     * @dev emit events when delegates added/removed
+     */
+    event DelegateAdded(address delegate);  
+    event DelegateRemoved(address delegate);  
+
+    /**
      * @dev Checks if called by owner or contract itself
      */
     modifier auth {
         require(
-            isDelegate[msg.sender] || msg.sender == address(this),
+            isDelegate[msg.sender] || msg.sender == address(this) || msg.sender == owner,
             "permission-denied"
         );
         _;
@@ -56,8 +64,23 @@ contract UserAuth is RegistryHelper {
     /**
      * @dev Adds a new address that can control the smart wallet
      */
-    function addDelegate(address newDelegate) external auth {
-        isDelegate[newDelegate] = true;
+    function addDelegate(address _delegate) external {
+        require(msg.sender == owner, "ONLY-OWNER");
+        require(_delegate != address(0x0), "ZERO-ADDRESS");
+        isDelegate[_delegate] = true;
+
+        emit DelegateAdded(_delegate);
+    }
+
+    /**
+     * @dev Remove an existing address that can control the smart wallet
+     */
+    function removeDelegate(address _delegate) external {
+        require(msg.sender == owner, "ONLY-OWNER");
+        require(isDelegate[_delegate], "NOT_DELEGATE");
+        isDelegate[_delegate] = false;
+
+        emit DelegateRemoved(_delegate);
     }
 }
 
@@ -67,21 +90,21 @@ contract UserAuth is RegistryHelper {
 contract SmartWallet is UserAuth {
     using SafeMath for uint256;
     
-    event LogMint(address erc20, uint256 tokenAmt, address owner);
-    event LogRedeem(address erc20, uint256 tokenAmt, address owner);
-    event LogDeposit(address erc20, uint256 tokenAmt);
-    event LogWithdraw(address erc20, uint256 tokenAmt);
+    event LogMint(address indexed erc20, uint256 tokenAmt, address owner);
+    event LogRedeem(address indexed erc20, uint256 tokenAmt, address owner);
+    event LogDeposit(address indexed erc20, uint256 tokenAmt);
+    event LogWithdraw(address indexed erc20, uint256 tokenAmt);
 
     IGasToken chi;
 
     /**
      * @dev sets the "address registry", owner's last activity, owner's active period and initial owner
      */
-    function initialize(address _registry, address _user) public {
+    function initialize(address _registry, address _user) external {
         require(registry == address(0), "ALREADY INITIALIZED");
         require(_user != address(0), "ZERO ADDRESS");
         registry = _registry;
-        isDelegate[_user] = true;
+        owner = _user;
         chi = IGasToken(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
     }
 
@@ -160,7 +183,7 @@ contract SmartWallet is UserAuth {
         return keccak256(abi.encodePacked(address(this), nonce, data));
     }
 
-    function executeMetaTransaction(bytes memory sign, bytes memory data) public {
+    function executeMetaTransaction(bytes memory sign, bytes memory data) external {
         bytes32 _hash = getHash(data);
         require(isDelegate[address(recover(_hash,sign))], "Invalid Signer");
         address target =  address(this);

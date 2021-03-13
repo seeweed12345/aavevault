@@ -17,6 +17,7 @@ interface IVault {
     function timelock() external view returns (address payable);
     function claimOnBehalf(address recipient) external;
     function lastDistribution() view external returns (uint);
+    function balanceOf(address) view external returns (uint);
 
     function deposit(uint amount) external;
     function depositAndWait(uint amount) external;
