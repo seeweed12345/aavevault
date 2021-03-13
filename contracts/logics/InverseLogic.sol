@@ -58,20 +58,9 @@ contract Helpers is DSMath {
         eth = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     }
 
-
-    function transferToken(address erc20) internal {
-        if (erc20 == getAddressETH()) {
-            msg.sender.transfer(address(this).balance);
-        } else {
-            ERC20Interface erc20Contract = ERC20Interface(erc20);
-            uint256 srcBal = erc20Contract.balanceOf(address(this));
-            if (srcBal > 0) {
-                erc20Contract.transfer(msg.sender, srcBal);
-            }
-        }
-    }
-
-
+    /**
+     * @dev unlimited approval
+     */
     function setApproval(
         address erc20,
         uint256 srcAmt,

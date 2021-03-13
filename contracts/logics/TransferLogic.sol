@@ -81,4 +81,13 @@ contract TransferLogic {
 
         emit LogWithdraw(erc20, amount);
     }
+
+    /**
+     * @dev Remove ERC20 approval to certain target
+     */
+    function removeApproval(address erc20, address target) external {
+        if (erc20 != getAddressETH()) {
+            IERC20(erc20).approve(target, 0);
+        }
+    }
 }

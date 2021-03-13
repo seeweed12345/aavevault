@@ -14,9 +14,7 @@ contract LogicRegistry is OwnableUpgradeable {
 
     /// EVENTS
     event LogEnableLogic(address indexed logicAddress);
-    event LogDisableLogic(address indexed logicAddress);
-    event FeeUpdated(uint newFee);
-    event FeeRecipientUpdated(address newRecipient);
+    event LogDisableLogic(address indexed logicAddress);    
 
     /// @notice Map of logic proxy state
     mapping(address => bool) public logicProxies;
@@ -106,6 +104,10 @@ contract EthaRegistry is WalletRegistry {
 
     /// @dev keep track of token addresses not allowed to withdraw (i.e. cETH)
     mapping(address => bool) public notAllowed;
+
+    // EVENTS
+    event FeeUpdated(uint newFee);
+    event FeeRecipientUpdated(address newRecipient);
 
     function initialize(
         address _impl,
