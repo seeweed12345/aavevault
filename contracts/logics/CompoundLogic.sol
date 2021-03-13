@@ -273,14 +273,15 @@ contract CompoundResolver is Helpers {
 
         address registry = ISmartWallet(address(this)).registry();
         uint256 fee = IRegistry(registry).getFee();
+        address payable feeRecipient = IRegistry(registry).feeRecipient();
 
         if (erc20 == getAddressETH()) {
-            address(uint160(registry)).transfer(
+            feeRecipient.transfer(
                 div(mul(tokenReturned, fee), 100000)
             );
         } else {
             ERC20Interface(erc20).transfer(
-                registry,
+                feeRecipient,
                 div(mul(tokenReturned, fee), 100000)
             );
         }

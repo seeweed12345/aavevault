@@ -21,7 +21,7 @@ contract LogicRegistry is OwnableUpgradeable {
     /// @dev
     /// @param _logicAddress (address)
     /// @return  (bool)
-    function logic(address _logicAddress) public view returns (bool) {
+    function logic(address _logicAddress) external view returns (bool) {
         return logicProxies[_logicAddress];
     }
 
@@ -35,8 +35,8 @@ contract LogicRegistry is OwnableUpgradeable {
 
     /// @dev Enable multiple logic proxy addresses
     /// @param _logicAddresses (addresses)
-    function enableLogicMultiple(address[] memory _logicAddresses)
-        public
+    function enableLogicMultiple(address[] calldata _logicAddresses)
+        external
         onlyOwner
     {
         for (uint256 i = 0; i < _logicAddresses.length; i++) {
@@ -46,7 +46,7 @@ contract LogicRegistry is OwnableUpgradeable {
 
     /// @dev Disable logic proxy address
     /// @param _logicAddress (address)
-    function disableLogic(address _logicAddress) public onlyOwner {
+    function disableLogic(address _logicAddress) external onlyOwner {
         require(_logicAddress != address(0), "ZERO ADDRESS");
         logicProxies[_logicAddress] = false;
         emit LogDisableLogic(_logicAddress);
@@ -73,7 +73,7 @@ contract WalletRegistry is LogicRegistry, CloneFactory {
     /// @dev Deploys a new proxy instance and sets custom owner of proxy
     /// Throws if the owner already have a UserWallet
     /// @return wallet - address of new Smart Wallet
-    function deployWallet() public returns (SmartWallet wallet) {
+    function deployWallet() external returns (SmartWallet wallet) {
         require(
             wallets[msg.sender] == SmartWallet(0),
             "multiple-proxy-per-user-not-allowed"
@@ -109,7 +109,7 @@ contract EthaRegistry is WalletRegistry {
         address _owner,
         address _feeRecipient,
         uint256 _fee
-    ) public initializer {
+    ) external initializer {
         require(
             _owner != address(0) && _feeRecipient != address(0),
             "ZERO ADDRESS"
@@ -139,7 +139,7 @@ contract EthaRegistry is WalletRegistry {
         return fee;
     }
 
-    function changeFeeRecipient(address _feeRecipient) public onlyOwner {
+    function changeFeeRecipient(address _feeRecipient) external onlyOwner {
         feeRecipient = _feeRecipient;
     }
 
