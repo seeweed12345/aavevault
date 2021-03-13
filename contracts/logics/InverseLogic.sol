@@ -86,10 +86,10 @@ contract Helpers is DSMath {
 }
 
 contract InverseResolver is Helpers {
-     event LogVaultDeposit(address erc20, uint256 tokenAmt);
-     event LogVaultDepositAndWait(address erc20, uint256 tokenAmt);
-     event LogVaultWithdraw(address erc20, uint256 tokenAmt);
-     event LogVaultWithdrawPending(address erc20, uint256 tokenAmt);
+     event LogVaultDeposit(address indexed erc20, uint256 tokenAmt);
+     event LogVaultDepositAndWait(address indexed erc20, uint256 tokenAmt);
+     event LogVaultWithdraw(address indexed erc20, uint256 tokenAmt);
+     event LogVaultWithdrawPending(address indexed erc20, uint256 tokenAmt);
      event LogVaultClaim(uint256 claimAmount);
 
     function deposit(address erc20, uint256 tokenAmt, address vault) external payable {

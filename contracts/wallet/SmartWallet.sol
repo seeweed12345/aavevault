@@ -12,6 +12,8 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
  */
 contract RegistryHelper {
 
+    event NewDelegate(address newDelegate);    
+
     /**
      * @dev address registry of system, stores logic and wallet addresses
      */
@@ -57,7 +59,10 @@ contract UserAuth is RegistryHelper {
      * @dev Adds a new address that can control the smart wallet
      */
     function addDelegate(address newDelegate) external auth {
+        require(newDelegate != address(0x0), "ZERO_ADDRESS");
         isDelegate[newDelegate] = true;
+
+        emit NewDelegate(newDelegate);
     }
 }
 
@@ -67,10 +72,10 @@ contract UserAuth is RegistryHelper {
 contract SmartWallet is UserAuth {
     using SafeMath for uint256;
     
-    event LogMint(address erc20, uint256 tokenAmt, address owner);
-    event LogRedeem(address erc20, uint256 tokenAmt, address owner);
-    event LogDeposit(address erc20, uint256 tokenAmt);
-    event LogWithdraw(address erc20, uint256 tokenAmt);
+    event LogMint(address indexed erc20, uint256 tokenAmt, address owner);
+    event LogRedeem(address indexed erc20, uint256 tokenAmt, address owner);
+    event LogDeposit(address indexed erc20, uint256 tokenAmt);
+    event LogWithdraw(address indexed erc20, uint256 tokenAmt);
 
     IGasToken chi;
 

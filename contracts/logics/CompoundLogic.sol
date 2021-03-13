@@ -206,24 +206,24 @@ contract Helpers is DSMath {
 }
 
 contract CompoundResolver is Helpers {
-    event LogMint(address erc20, uint256 tokenAmt, address owner);
-    event LogRedeem(address erc20, uint256 tokenAmt, address owner);
+    event LogMint(address indexed erc20, uint256 tokenAmt, address owner);
+    event LogRedeem(address indexed erc20, uint256 tokenAmt, address owner);
     event LogBorrow(
-        address erc20,
-        address cErc20,
+        address indexed erc20,
+        address indexed cErc20,
         uint256 tokenAmt,
         address owner
     );
     event LogRepay(
-        address erc20,
-        address cErc20,
+        address indexed erc20,
+        address indexed cErc20,
         uint256 tokenAmt,
         address owner
     );
     event LogRepayBehalf(
-        address borrower,
-        address erc20,
-        address cErc20,
+        address indexed borrower,
+        address indexed erc20,
+        address indexed cErc20,
         uint256 tokenAmt,
         address owner
     );

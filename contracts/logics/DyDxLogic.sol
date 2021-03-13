@@ -169,10 +169,10 @@ contract Helpers is DSMath {
 }
 
 contract DydxResolver is Helpers {
-    event LogMint(address erc20Addr, uint256 tokenAmt, address owner);
-    event LogRedeem(address erc20Addr, uint256 tokenAmt, address owner);
-    event LogBorrow(address erc20Addr, uint256 tokenAmt, address owner);
-    event LogPayback(address erc20Addr, uint256 tokenAmt, address owner);
+    event LogMint(address indexed erc20Addr, uint256 tokenAmt, address owner);
+    event LogRedeem(address indexed erc20Addr, uint256 tokenAmt, address owner);
+    event LogBorrow(address indexed erc20Addr, uint256 tokenAmt, address owner);
+    event LogPayback(address indexed erc20Addr, uint256 tokenAmt, address owner);
 
     /**
      * @dev Deposit ETH/ERC20

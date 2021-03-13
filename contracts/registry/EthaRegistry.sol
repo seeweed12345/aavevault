@@ -12,8 +12,11 @@ import "../utils/CloneFactory.sol";
 contract LogicRegistry is OwnableUpgradeable {
     using SafeMath for uint256;
 
-    event LogEnableLogic(address logicAddress);
-    event LogDisableLogic(address logicAddress);
+    /// EVENTS
+    event LogEnableLogic(address indexed logicAddress);
+    event LogDisableLogic(address indexed logicAddress);
+    event FeeUpdated(uint newFee);
+    event FeeRecipientUpdated(address newRecipient);
 
     /// @notice Map of logic proxy state
     mapping(address => bool) public logicProxies;
@@ -133,6 +136,7 @@ contract EthaRegistry is WalletRegistry {
 
     function setFee(uint256 _fee) public onlyOwner {
         fee = _fee;
+        emit FeeUpdated(_fee);
     }
 
     function getFee() external view returns (uint256) {
@@ -141,6 +145,7 @@ contract EthaRegistry is WalletRegistry {
 
     function changeFeeRecipient(address _feeRecipient) external onlyOwner {
         feeRecipient = _feeRecipient;
+        emit FeeRecipientUpdated(_feeRecipient);
     }
 
     /**

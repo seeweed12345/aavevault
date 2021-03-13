@@ -14,16 +14,23 @@ contract Vault is Ownable, Pausable, DividendToken {
 
     IERC20Detailed public underlying;
     IStrat public strat;
+    Timelock public timelock;
+
     address public harvester;
     uint constant MAX_FEE = 10000;
     uint public performanceFee = 0; // 0% of profit
     // if depositLimit = 0 then there is no deposit limit
     uint public depositLimit;
-    uint public lastDistribution;
-    Timelock public timelock;
+    uint public lastDistribution;    
     uint256 public pendingTotal = 0;
     mapping(address => uint256) public pending;
     address[] public addressesPendingForMinting;
+
+    // EVENTS
+    event HarvesterChanged(address newHarvester);
+    event FeeUpdate(uint256 newFee);
+    event StrategyChanged(address newStrat);
+    event DepositLimitUpdated(uint newLimit);
 
     modifier onlyHarvester {
         require(msg.sender == harvester);
@@ -45,6 +52,7 @@ contract Vault is Ownable, Pausable, DividendToken {
     }
 
     function deposit(uint amount) external whenNotPaused {
+        require(amount > 0, "ZERO-AMOUNT");
         if(depositLimit > 0) { // if deposit limit is 0, then there is no deposit limit
             require(totalSupply().add(amount) <= depositLimit);
         }
@@ -54,6 +62,7 @@ contract Vault is Ownable, Pausable, DividendToken {
     }
 
     function depositAndWait(uint amount) external whenNotPaused {
+        require(amount > 0, "ZERO-AMOUNT");
         if(depositLimit > 0) { // if deposit limit is 0, then there is no deposit limit
             require(totalSupply().add(amount) <= depositLimit);
         }
@@ -64,12 +73,14 @@ contract Vault is Ownable, Pausable, DividendToken {
     }
 
     function withdraw(uint amount) external {
+        require(amount > 0, "ZERO-AMOUNT");
         _burn(msg.sender, amount);
         strat.divest(amount);
         underlying.safeTransfer(msg.sender, amount);
     }
 
     function withdrawPending(uint amount) external {
+        require(amount > 0, "ZERO-AMOUNT");
         require(amount >= pending[msg.sender], 'Withdrawal Amount Greater Than Deposited');
         pendingTotal = pendingTotal.sub(amount);
         pending[msg.sender] = (pending[msg.sender]).sub(amount);
@@ -114,11 +125,15 @@ contract Vault is Ownable, Pausable, DividendToken {
 
     function changeHarvester(address harvester_) external onlyOwner {
         harvester = harvester_;
+
+        emit HarvesterChanged(harvester_);
     }
 
     function changePerformanceFee(uint fee_) external onlyOwner {
         require(fee_ <= MAX_FEE);
         performanceFee = fee_;
+
+        emit FeeUpdate(fee_);
     }
 
     // The owner has to wait 2 days to confirm changing the strat.
@@ -140,11 +155,15 @@ contract Vault is Ownable, Pausable, DividendToken {
             _unpause();
         }
         strat = strat_;
+
+        emit StrategyChanged(address(strat));
     }
 
     // if limit == 0 then there is no deposit limit
     function setDepositLimit(uint limit) external onlyOwner {
         depositLimit = limit;
+
+        emit DepositLimitUpdated(limit);
     }
 
     // Any tokens (other than the target) that are sent here by mistake are recoverable by the owner
