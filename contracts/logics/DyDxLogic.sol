@@ -97,6 +97,7 @@ contract Helpers is DSMath {
     ) internal {
         ERC20Interface erc20Contract = ERC20Interface(erc20);
         uint256 tokenAllowance = erc20Contract.allowance(address(this), to);
+        // Only runs once, condition wont be true after infinite approving
         if (srcAmt > tokenAllowance) {
             erc20Contract.approve(to, uint256(-1));
         }
@@ -212,11 +213,16 @@ contract DydxResolver is Helpers {
     ) external payable {
         (uint256 toPayback, bool tokenSign) = getDydxBal(marketId);
         require(!tokenSign, "No debt to payback");
+
         toPayback = toPayback > tokenAmt ? tokenAmt : toPayback;
+
         if (erc20Addr == getAddressETH()) {
+            require(msg.value == tokenAmt, "INVALID-ETH-SENT");
             ERC20Interface(getAddressWETH()).deposit{value:toPayback}();
             setApproval(getAddressWETH(), toPayback, getSoloAddress());
-            msg.sender.transfer(address(this).balance);
+
+            // Refund extra eth sent
+            if(tokenAmt > toPayback) msg.sender.transfer(sub(tokenAmt, toPayback));
         } else {
             require(
                 ERC20Interface(erc20Addr).transferFrom(
@@ -245,6 +251,7 @@ contract DydxResolver is Helpers {
     ) external {
         (uint256 toWithdraw, bool tokenSign) = getDydxBal(marketId);
         require(tokenSign, "token not deposited");
+
         toWithdraw = toWithdraw > tokenAmt ? tokenAmt : toWithdraw;
         ISoloMargin solo = ISoloMargin(getSoloAddress());
         solo.operate(
@@ -283,6 +290,9 @@ contract DydxResolver is Helpers {
         address erc20Addr,
         uint256 tokenAmt
     ) external {
+        (, bool tokenSign) = getDydxBal(marketId);
+        require(!tokenSign, "token deposited");
+
         ISoloMargin(getSoloAddress()).operate(
             getAccountArgs(),
             getActionsArgs(marketId, tokenAmt, false)

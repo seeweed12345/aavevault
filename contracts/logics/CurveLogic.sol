@@ -31,6 +31,11 @@ interface ICurve {
         uint256 dx,
         uint256 minDy
     ) external;
+
+    // solium-disable-next-line mixedcase
+    function underlying_coins(
+        int128 arg0
+    ) external view returns(address);
 }
 
 interface ICurveRegistry {
@@ -123,7 +128,7 @@ contract CurveLogic {
         IERC20 erc20Contract = IERC20(erc20);
         uint256 tokenAllowance = erc20Contract.allowance(address(this), to);
         if (srcAmt > tokenAllowance) {
-            erc20Contract.approve(to, srcAmt - tokenAllowance);
+            erc20Contract.approve(to, uint(-1));
         }
     }
 
@@ -132,9 +137,15 @@ contract CurveLogic {
         address dest,
         uint256 srcAmt
     ) external returns (uint256) {
-        int128 i = (src == DAI_ADDRESS ? 1 : 0) + (src == USDC_ADDRESS ? 2 : 0);
-        int128 j = (dest == DAI_ADDRESS ? 1 : 0) +
-            (dest == USDC_ADDRESS ? 2 : 0);
+
+        int128 i;
+        int128 j;
+
+        for(int128 x = 1; x <= 2; x++){
+            if(CURVE_COMPOUND.underlying_coins(x) == src) i = x;
+            if(CURVE_COMPOUND.underlying_coins(x) == dest) j = x;
+        }
+
         if (i == 0 || j == 0) {
             return 0;
         }
@@ -149,12 +160,14 @@ contract CurveLogic {
         address dest,
         uint256 srcAmt
     ) external returns (uint256) {
-        int128 i = (src == DAI_ADDRESS ? 1 : 0) +
-            (src == USDC_ADDRESS ? 2 : 0) +
-            (src == USDT_ADDRESS ? 3 : 0);
-        int128 j = (dest == DAI_ADDRESS ? 1 : 0) +
-            (dest == USDC_ADDRESS ? 2 : 0) +
-            (dest == USDT_ADDRESS ? 3 : 0);
+        int128 i;
+        int128 j;
+
+        for(int128 x = 1; x <= 3; x++){
+            if(CURVE_USDT.underlying_coins(x) == src) i = x;
+            if(CURVE_USDT.underlying_coins(x) == dest) j = x;
+        }
+        
         if (i == 0 || j == 0) {
             return 0;
         }
@@ -169,14 +182,14 @@ contract CurveLogic {
         address dest,
         uint256 srcAmt
     ) external returns (uint256) {
-        int128 i = (src == DAI_ADDRESS ? 1 : 0) +
-            (src == USDC_ADDRESS ? 2 : 0) +
-            (src == USDT_ADDRESS ? 3 : 0) +
-            (src == TUSD_ADDRESS ? 4 : 0);
-        int128 j = (dest == DAI_ADDRESS ? 1 : 0) +
-            (dest == USDC_ADDRESS ? 2 : 0) +
-            (dest == USDT_ADDRESS ? 3 : 0) +
-            (dest == TUSD_ADDRESS ? 4 : 0);
+        int128 i;
+        int128 j;
+
+        for(int128 x = 1; x <= 4; x++){
+            if(CURVE_Y.underlying_coins(x) == src) i = x;
+            if(CURVE_Y.underlying_coins(x) == dest) j = x;
+        }
+        
         if (i == 0 || j == 0) {
             return 0;
         }
@@ -191,14 +204,14 @@ contract CurveLogic {
         address dest,
         uint256 srcAmt
     ) external returns (uint256) {
-        int128 i = (src == DAI_ADDRESS ? 1 : 0) +
-            (src == USDC_ADDRESS ? 2 : 0) +
-            (src == USDT_ADDRESS ? 3 : 0) +
-            (src == BUSD_ADDRESS ? 4 : 0);
-        int128 j = (dest == DAI_ADDRESS ? 1 : 0) +
-            (dest == USDC_ADDRESS ? 2 : 0) +
-            (dest == USDT_ADDRESS ? 3 : 0) +
-            (dest == BUSD_ADDRESS ? 4 : 0);
+        int128 i;
+        int128 j;
+
+        for(int128 x = 1; x <= 4; x++){
+            if(CURVE_B.underlying_coins(x) == src) i = x;
+            if(CURVE_B.underlying_coins(x) == dest) j = x;
+        }
+        
         if (i == 0 || j == 0) {
             return 0;
         }
@@ -213,14 +226,14 @@ contract CurveLogic {
         address dest,
         uint256 srcAmt
     ) external returns (uint256) {
-        int128 i = (src == DAI_ADDRESS ? 1 : 0) +
-            (src == USDC_ADDRESS ? 2 : 0) +
-            (src == USDT_ADDRESS ? 3 : 0) +
-            (src == SUSD_ADDRESS ? 4 : 0);
-        int128 j = (dest == DAI_ADDRESS ? 1 : 0) +
-            (dest == USDC_ADDRESS ? 2 : 0) +
-            (dest == USDT_ADDRESS ? 3 : 0) +
-            (dest == SUSD_ADDRESS ? 4 : 0);
+        int128 i;
+        int128 j;
+
+        for(int128 x = 1; x <= 4; x++){
+            if(CURVE_S.underlying_coins(x) == src) i = x;
+            if(CURVE_S.underlying_coins(x) == dest) j = x;
+        }
+        
         if (i == 0 || j == 0) {
             return 0;
         }
@@ -235,14 +248,14 @@ contract CurveLogic {
         address dest,
         uint256 srcAmt
     ) external returns (uint256) {
-        int128 i = (src == DAI_ADDRESS ? 1 : 0) +
-            (src == USDC_ADDRESS ? 2 : 0) +
-            (src == USDT_ADDRESS ? 3 : 0) +
-            (src == PAX_ADDRESS ? 4 : 0);
-        int128 j = (dest == DAI_ADDRESS ? 1 : 0) +
-            (dest == USDC_ADDRESS ? 2 : 0) +
-            (dest == USDT_ADDRESS ? 3 : 0) +
-            (dest == PAX_ADDRESS ? 4 : 0);
+        int128 i;
+        int128 j;
+
+        for(int128 x = 1; x <= 4; x++){
+            if(CURVE_PAX.underlying_coins(x) == src) i = x;
+            if(CURVE_PAX.underlying_coins(x) == dest) j = x;
+        }
+        
         if (i == 0 || j == 0) {
             return 0;
         }
@@ -251,5 +264,7 @@ contract CurveLogic {
 
         CURVE_PAX.exchange_underlying(i - 1, j - 1, srcAmt, 0);
     }
+
+    // TODO: Generic Function to Swap on any Pool
     
 }
