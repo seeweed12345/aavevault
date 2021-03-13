@@ -10,9 +10,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 /**
  * @title Registry related helper functions
  */
-contract RegistryHelper {
-
-    event NewDelegate(address newDelegate);    
+contract RegistryHelper {  
 
     /**
      * @dev address registry of system, stores logic and wallet addresses
@@ -34,6 +32,8 @@ contract RegistryHelper {
  */
 contract UserAuth is RegistryHelper {
 
+    address public owner;
+
     /**
      * @dev store allowed addresses to use the smart wallet
      */
@@ -45,11 +45,17 @@ contract UserAuth is RegistryHelper {
     uint public nonce;
 
     /**
+     * @dev emit events when delegates added/removed
+     */
+    event DelegateAdded(address delegate);  
+    event DelegateRemoved(address delegate);  
+
+    /**
      * @dev Checks if called by owner or contract itself
      */
     modifier auth {
         require(
-            isDelegate[msg.sender] || msg.sender == address(this),
+            isDelegate[msg.sender] || msg.sender == address(this) || msg.sender == owner,
             "permission-denied"
         );
         _;
@@ -58,11 +64,23 @@ contract UserAuth is RegistryHelper {
     /**
      * @dev Adds a new address that can control the smart wallet
      */
-    function addDelegate(address newDelegate) external auth {
-        require(newDelegate != address(0x0), "ZERO_ADDRESS");
-        isDelegate[newDelegate] = true;
+    function addDelegate(address _delegate) external {
+        require(msg.sender == owner, "ONLY-OWNER");
+        require(_delegate != address(0x0), "ZERO-ADDRESS");
+        isDelegate[_delegate] = true;
 
-        emit NewDelegate(newDelegate);
+        emit DelegateAdded(_delegate);
+    }
+
+    /**
+     * @dev Remove an existing address that can control the smart wallet
+     */
+    function removeDelegate(address _delegate) external {
+        require(msg.sender == owner, "ONLY-OWNER");
+        require(isDelegate[_delegate], "NOT_DELEGATE");
+        isDelegate[_delegate] = false;
+
+        emit DelegateRemoved(_delegate);
     }
 }
 
@@ -86,7 +104,7 @@ contract SmartWallet is UserAuth {
         require(registry == address(0), "ALREADY INITIALIZED");
         require(_user != address(0), "ZERO ADDRESS");
         registry = _registry;
-        isDelegate[_user] = true;
+        owner = _user;
         chi = IGasToken(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
     }
 
