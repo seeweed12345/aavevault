@@ -181,7 +181,7 @@ contract DydxResolver is Helpers {
         uint256 marketId,
         address erc20Addr,
         uint256 tokenAmt
-    ) public payable {
+    ) external payable {
         uint256 toDeposit = tokenAmt;
         if (erc20Addr == getAddressETH()) {
             uint256 balance = address(this).balance;
@@ -209,7 +209,7 @@ contract DydxResolver is Helpers {
         uint256 marketId,
         address erc20Addr,
         uint256 tokenAmt
-    ) public payable {
+    ) external payable {
         (uint256 toPayback, bool tokenSign) = getDydxBal(marketId);
         require(!tokenSign, "No debt to payback");
         toPayback = toPayback > tokenAmt ? tokenAmt : toPayback;
@@ -242,7 +242,7 @@ contract DydxResolver is Helpers {
         uint256 marketId,
         address erc20Addr,
         uint256 tokenAmt
-    ) public {
+    ) external {
         (uint256 toWithdraw, bool tokenSign) = getDydxBal(marketId);
         require(tokenSign, "token not deposited");
         toWithdraw = toWithdraw > tokenAmt ? tokenAmt : toWithdraw;
@@ -282,7 +282,7 @@ contract DydxResolver is Helpers {
         uint256 marketId,
         address erc20Addr,
         uint256 tokenAmt
-    ) public {
+    ) external {
         ISoloMargin(getSoloAddress()).operate(
             getAccountArgs(),
             getActionsArgs(marketId, tokenAmt, false)

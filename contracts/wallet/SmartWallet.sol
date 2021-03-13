@@ -160,7 +160,7 @@ contract SmartWallet is UserAuth {
         return keccak256(abi.encodePacked(address(this), nonce, data));
     }
 
-    function executeMetaTransaction(bytes memory sign, bytes memory data) public {
+    function executeMetaTransaction(bytes memory sign, bytes memory data) external {
         bytes32 _hash = getHash(data);
         require(isDelegate[address(recover(_hash,sign))], "Invalid Signer");
         address target =  address(this);

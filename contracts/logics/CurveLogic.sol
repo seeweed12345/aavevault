@@ -62,7 +62,6 @@ contract CurveLogic {
     ICurveRegistry internal constant CURVE_REGISTRY = ICurveRegistry(
         0x7002B727Ef8F5571Cb5F9D70D13DBEEb4dFAe9d1
     );
-
     // CURVE POOLS
     ICurve internal constant CURVE_COMPOUND = ICurve(
         0xA2B47E3D5c44877cca798226B7B8118F9BFb7A56
