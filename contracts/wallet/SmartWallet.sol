@@ -70,7 +70,7 @@ contract SmartWallet is UserAuth {
     /**
      * @dev sets the "address registry", owner's last activity, owner's active period and initial owner
      */
-    function initialize(address _registry, address _user) public {
+    function initialize(address _registry, address _user) external {
         require(registry == address(0), "ALREADY INITIALIZED");
         require(_user != address(0), "ZERO ADDRESS");
         registry = _registry;

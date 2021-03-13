@@ -44,7 +44,7 @@ contract Vault is Ownable, Pausable, DividendToken {
         return strat.calcTotalValue();
     }
 
-    function deposit(uint amount) public whenNotPaused {
+    function deposit(uint amount) external whenNotPaused {
         if(depositLimit > 0) { // if deposit limit is 0, then there is no deposit limit
             require(totalSupply().add(amount) <= depositLimit);
         }
@@ -53,7 +53,7 @@ contract Vault is Ownable, Pausable, DividendToken {
         _mint(msg.sender, amount);
     }
 
-    function depositAndWait(uint amount) public whenNotPaused {
+    function depositAndWait(uint amount) external whenNotPaused {
         if(depositLimit > 0) { // if deposit limit is 0, then there is no deposit limit
             require(totalSupply().add(amount) <= depositLimit);
         }
@@ -63,20 +63,20 @@ contract Vault is Ownable, Pausable, DividendToken {
         addressesPendingForMinting.push(msg.sender);
     }
 
-    function withdraw(uint amount) public {
+    function withdraw(uint amount) external {
         _burn(msg.sender, amount);
         strat.divest(amount);
         underlying.safeTransfer(msg.sender, amount);
     }
 
-    function withdrawPending(uint amount) public {
+    function withdrawPending(uint amount) external {
         require(amount >= pending[msg.sender], 'Withdrawal Amount Greater Than Deposited');
         pendingTotal = pendingTotal.sub(amount);
         pending[msg.sender] = (pending[msg.sender]).sub(amount);
         underlying.safeTransfer(msg.sender, amount);
     }
 
-    function mintPending() public{
+    function mintPending() external{
       underlying.safeTransfer(address(strat), pendingTotal);
       strat.invest();
       pendingTotal = 0;
@@ -93,30 +93,30 @@ contract Vault is Ownable, Pausable, DividendToken {
         return calcTotalValue().sub(totalSupply());
     }
 
-    function unclaimedProfit(address user) public view returns (uint256) {
+    function unclaimedProfit(address user) external view returns (uint256) {
         return withdrawableDividendOf(user);
     }
 
-    function claim() public {
+    function claim() external {
         withdrawDividend(msg.sender);
     }
 
     // Used to claim on behalf of certain contracts e.g. Uniswap pool
-    function claimOnBehalf(address recipient) public {
+    function claimOnBehalf(address recipient) external {
         require(msg.sender == harvester || msg.sender == owner());
         withdrawDividend(recipient);
     }
 
-    function pauseDeposits(bool trigger) public onlyOwner {
+    function pauseDeposits(bool trigger) external onlyOwner {
         if(trigger) _pause();
         else _unpause();
     }
 
-    function changeHarvester(address harvester_) public onlyOwner {
+    function changeHarvester(address harvester_) external onlyOwner {
         harvester = harvester_;
     }
 
-    function changePerformanceFee(uint fee_) public onlyOwner {
+    function changePerformanceFee(uint fee_) external onlyOwner {
         require(fee_ <= MAX_FEE);
         performanceFee = fee_;
     }
@@ -124,7 +124,7 @@ contract Vault is Ownable, Pausable, DividendToken {
     // The owner has to wait 2 days to confirm changing the strat.
     // This protects users from an upgrade to a malicious strategy
     // Users must watch the timelock contract on Etherscan for any transactions
-    function setStrat(IStrat strat_, bool force) public {
+    function setStrat(IStrat strat_, bool force) external {
         if(address(strat) != address(0)) {
             require(msg.sender == address(timelock));
             uint prevTotalValue = strat.calcTotalValue();
@@ -143,7 +143,7 @@ contract Vault is Ownable, Pausable, DividendToken {
     }
 
     // if limit == 0 then there is no deposit limit
-    function setDepositLimit(uint limit) public onlyOwner {
+    function setDepositLimit(uint limit) external onlyOwner {
         depositLimit = limit;
     }
 
@@ -153,7 +153,7 @@ contract Vault is Ownable, Pausable, DividendToken {
         IERC20(_token).transfer(owner(), IERC20(_token).balanceOf(address(this)));
     }
 
-    function harvest(uint amount) public onlyHarvester returns (uint afterFee) {
+    function harvest(uint amount) external onlyHarvester returns (uint afterFee) {
         require(amount <= underlyingYield(), "Amount larger than generated yield");
         strat.divest(amount);
         if(performanceFee > 0) {
@@ -166,7 +166,7 @@ contract Vault is Ownable, Pausable, DividendToken {
         underlying.safeTransfer(harvester, afterFee);
     }
 
-    function distribute(uint amount) public onlyHarvester {
+    function distribute(uint amount) external onlyHarvester {
         distributeDividends(amount);
         lastDistribution = block.timestamp;
     }

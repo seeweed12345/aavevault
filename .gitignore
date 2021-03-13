@@ -6,3 +6,4 @@ package-lock.json
 .env
 .vscode
 .openzeppelin
+scripts/vesting/data.js

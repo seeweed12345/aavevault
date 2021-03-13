@@ -58,27 +58,28 @@ interface IERC20 {
 }
 
 contract CurveLogic {
-    ICurveRegistry curveRegistry = ICurveRegistry(
+    // CURVE REGISTRY
+    ICurveRegistry internal constant CURVE_REGISTRY = ICurveRegistry(
         0x7002B727Ef8F5571Cb5F9D70D13DBEEb4dFAe9d1
     );
 
     // CURVE POOLS
-    ICurve internal constant curveCompound = ICurve(
+    ICurve internal constant CURVE_COMPOUND = ICurve(
         0xA2B47E3D5c44877cca798226B7B8118F9BFb7A56
     );
-    ICurve internal constant curveUSDT = ICurve(
+    ICurve internal constant CURVE_USDT = ICurve(
         0x52EA46506B9CC5Ef470C5bf89f17Dc28bB35D85C
     );
-    ICurve internal constant curveY = ICurve(
+    ICurve internal constant CURVE_Y = ICurve(
         0x45F783CCE6B7FF23B2ab2D70e416cdb7D6055f51
     );
-    ICurve internal constant curveBinance = ICurve(
+    ICurve internal constant CURVE_B = ICurve(
         0x79a8C46DeA5aDa233ABaFFD40F3A0A2B1e5A4F27
     );
-    ICurve internal constant curveSynth = ICurve(
+    ICurve internal constant CURVE_S = ICurve(
         0xA5407eAE9Ba41422680e2e00537571bcC53efBfD
     );
-    ICurve internal constant curvePAX = ICurve(
+    ICurve internal constant CURVE_PAX = ICurve(
         0x06364f10B501e868329afBc005b3492902d6C763
     );
 
@@ -98,8 +99,8 @@ contract CurveLogic {
         uint256 limit
     ) external view returns (address pool, uint256 destAmt) {
         for (uint256 i = 0; i <= limit; i++) {
-            address checkPool = curveRegistry.find_pool_for_coins(src, dest, i);
-            uint256 result = curveRegistry.get_exchange_amount(
+            address checkPool = CURVE_REGISTRY.find_pool_for_coins(src, dest, i);
+            uint256 result = CURVE_REGISTRY.get_exchange_amount(
                 checkPool,
                 src,
                 dest,
@@ -131,7 +132,7 @@ contract CurveLogic {
         address src,
         address dest,
         uint256 srcAmt
-    ) public returns (uint256) {
+    ) external returns (uint256) {
         int128 i = (src == DAI_ADDRESS ? 1 : 0) + (src == USDC_ADDRESS ? 2 : 0);
         int128 j = (dest == DAI_ADDRESS ? 1 : 0) +
             (dest == USDC_ADDRESS ? 2 : 0);
@@ -139,16 +140,16 @@ contract CurveLogic {
             return 0;
         }
 
-        setApproval(src, srcAmt, address(curveCompound));
+        setApproval(src, srcAmt, address(CURVE_COMPOUND));
 
-        curveCompound.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+        CURVE_COMPOUND.exchange_underlying(i - 1, j - 1, srcAmt, 0);
     }
 
     function swapOnCurveUSDT(
         address src,
         address dest,
         uint256 srcAmt
-    ) public returns (uint256) {
+    ) external returns (uint256) {
         int128 i = (src == DAI_ADDRESS ? 1 : 0) +
             (src == USDC_ADDRESS ? 2 : 0) +
             (src == USDT_ADDRESS ? 3 : 0);
@@ -159,16 +160,16 @@ contract CurveLogic {
             return 0;
         }
 
-        setApproval(src, srcAmt, address(curveUSDT));
+        setApproval(src, srcAmt, address(CURVE_USDT));
 
-        curveUSDT.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+        CURVE_USDT.exchange_underlying(i - 1, j - 1, srcAmt, 0);
     }
 
     function swapOnCurveY(
         address src,
         address dest,
         uint256 srcAmt
-    ) public returns (uint256) {
+    ) external returns (uint256) {
         int128 i = (src == DAI_ADDRESS ? 1 : 0) +
             (src == USDC_ADDRESS ? 2 : 0) +
             (src == USDT_ADDRESS ? 3 : 0) +
@@ -181,38 +182,38 @@ contract CurveLogic {
             return 0;
         }
 
-        setApproval(src, srcAmt, address(curveY));
+        setApproval(src, srcAmt, address(CURVE_Y));
 
-        curveY.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+        CURVE_Y.exchange_underlying(i - 1, j - 1, srcAmt, 0);
     }
 
-    function swapOnCurvePAX(
+    function swapOnCurveB(
         address src,
         address dest,
         uint256 srcAmt
-    ) public returns (uint256) {
+    ) external returns (uint256) {
         int128 i = (src == DAI_ADDRESS ? 1 : 0) +
             (src == USDC_ADDRESS ? 2 : 0) +
             (src == USDT_ADDRESS ? 3 : 0) +
-            (src == PAX_ADDRESS ? 4 : 0);
+            (src == BUSD_ADDRESS ? 4 : 0);
         int128 j = (dest == DAI_ADDRESS ? 1 : 0) +
             (dest == USDC_ADDRESS ? 2 : 0) +
             (dest == USDT_ADDRESS ? 3 : 0) +
-            (dest == PAX_ADDRESS ? 4 : 0);
+            (dest == BUSD_ADDRESS ? 4 : 0);
         if (i == 0 || j == 0) {
             return 0;
         }
 
-        setApproval(src, srcAmt, address(curvePAX));
+        setApproval(src, srcAmt, address(CURVE_B));
 
-        curvePAX.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+        CURVE_B.exchange_underlying(i - 1, j - 1, srcAmt, 0);
     }
 
     function swapOnCurveSynth(
         address src,
         address dest,
         uint256 srcAmt
-    ) public returns (uint256) {
+    ) external returns (uint256) {
         int128 i = (src == DAI_ADDRESS ? 1 : 0) +
             (src == USDC_ADDRESS ? 2 : 0) +
             (src == USDT_ADDRESS ? 3 : 0) +
@@ -225,8 +226,31 @@ contract CurveLogic {
             return 0;
         }
 
-        setApproval(src, srcAmt, address(curveSynth));
+        setApproval(src, srcAmt, address(CURVE_S));
 
-        curveSynth.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+        CURVE_S.exchange_underlying(i - 1, j - 1, srcAmt, 0);
     }
+
+    function swapOnCurvePAX(
+        address src,
+        address dest,
+        uint256 srcAmt
+    ) external returns (uint256) {
+        int128 i = (src == DAI_ADDRESS ? 1 : 0) +
+            (src == USDC_ADDRESS ? 2 : 0) +
+            (src == USDT_ADDRESS ? 3 : 0) +
+            (src == PAX_ADDRESS ? 4 : 0);
+        int128 j = (dest == DAI_ADDRESS ? 1 : 0) +
+            (dest == USDC_ADDRESS ? 2 : 0) +
+            (dest == USDT_ADDRESS ? 3 : 0) +
+            (dest == PAX_ADDRESS ? 4 : 0);
+        if (i == 0 || j == 0) {
+            return 0;
+        }
+
+        setApproval(src, srcAmt, address(CURVE_PAX));
+
+        CURVE_PAX.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+    }
+    
 }
