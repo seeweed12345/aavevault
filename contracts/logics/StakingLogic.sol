@@ -5,12 +5,21 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IRewards.sol";
 
 /**
-
-    Synthetix Rewards for ETHA/ETH Uniswap LP
-
+    Synthetix Rewards Contract interaction for Vault and LP tokens
  */
 contract StakingLogic {
 
+
+    function setApproval(
+        IERC20 erc20,
+        uint256 srcAmt,
+        address to
+    ) internal {
+        uint256 tokenAllowance = erc20.allowance(address(this), to);
+        if (srcAmt > tokenAllowance) {
+            erc20.approve(to, uint(-1));
+        }
+    }
     /**
      * @notice Stake LP Tokens
      * @dev amount of tokens to stake (-1 = all balance)
@@ -19,7 +28,9 @@ contract StakingLogic {
         uint256 realAmt = amt == uint256(-1)
             ? lpToken.balanceOf(address(this))
             : amt;
-        lpToken.approve(address(rewards), uint256(-1));
+
+        setApproval(lpToken, realAmt, address(rewards));
+
         rewards.stake(realAmt);
     }
 
@@ -43,6 +54,4 @@ contract StakingLogic {
     function exit(IRewards rewards) external {
         rewards.exit();
     }
-
-    receive() external payable {}
 }

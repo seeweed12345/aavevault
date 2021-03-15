@@ -15,14 +15,20 @@ contract YTokenStrat is IStrat {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Detailed;
+
     IVault public vault;
     IYToken public yToken;
     IERC20Detailed public underlying;
     Timelock public timelock;
+
     uint public immutable minWithdrawalCap; // prevents the owner from completely blocking withdrawals
     uint public withdrawalCap = uint(-1); // max uint
     uint public buffer; // buffer of underlying to keep in the strat
     string public name = "Yearn V2"; // for display purposes only
+
+    // EVENTS
+    event CapUpdated(uint newCap);
+    event BufferSet(uint newBuffer); 
 
     modifier onlyVault {
         require(msg.sender == address(vault));
@@ -124,12 +130,16 @@ contract YTokenStrat is IStrat {
     // set buffer to -1 to pause deposits to yearn. 0 to remove buffer.
     function setBuffer(uint _buffer) public onlyOwner {
         buffer = _buffer;
+
+        emit BufferSet(_buffer);
     }
 
     // set to -1 for no cap
     function setWithdrawalCap(uint underlyingCap) public onlyOwner {
         require(underlyingCap >= minWithdrawalCap);
         withdrawalCap = underlyingCap;
+
+        emit CapUpdated(withdrawalCap);
     }
 
     function sharesForAmount(uint amount) internal view returns (uint) {

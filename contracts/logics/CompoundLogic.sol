@@ -59,6 +59,8 @@ interface CERC20Interface {
         returns (uint256); // For ERC20
 
     function borrowBalanceCurrent(address account) external returns (uint256);
+
+    function underlying() external view returns (address);
 }
 
 interface CETHInterface {
@@ -200,30 +202,30 @@ contract Helpers is DSMath {
         ERC20Interface erc20Contract = ERC20Interface(erc20);
         uint256 tokenAllowance = erc20Contract.allowance(address(this), to);
         if (srcAmt > tokenAllowance) {
-            erc20Contract.approve(to, sub(srcAmt, tokenAllowance));
+            erc20Contract.approve(to, uint(-1));
         }
     }
 }
 
 contract CompoundResolver is Helpers {
-    event LogMint(address erc20, uint256 tokenAmt, address owner);
-    event LogRedeem(address erc20, uint256 tokenAmt, address owner);
+    event LogMint(address indexed erc20, uint256 tokenAmt, address owner);
+    event LogRedeem(address indexed erc20, uint256 tokenAmt, address owner);
     event LogBorrow(
-        address erc20,
-        address cErc20,
+        address indexed erc20,
+        address indexed cErc20,
         uint256 tokenAmt,
         address owner
     );
     event LogRepay(
-        address erc20,
-        address cErc20,
+        address indexed erc20,
+        address indexed cErc20,
         uint256 tokenAmt,
         address owner
     );
     event LogRepayBehalf(
-        address borrower,
-        address erc20,
-        address cErc20,
+        address indexed borrower,
+        address indexed erc20,
+        address indexed cErc20,
         uint256 tokenAmt,
         address owner
     );
@@ -244,6 +246,8 @@ contract CompoundResolver is Helpers {
             CETHInterface cToken = CETHInterface(cErc20);
             cToken.mint{value:tokenAmt}();
         } else {
+            require(erc20 == CERC20Interface(cErc20).underlying(), "INVALID-UNDERLYING");
+
             ERC20Interface token = ERC20Interface(erc20);
             uint256 balance = token.balanceOf(address(this));
             if (toDeposit > balance) {
@@ -252,7 +256,7 @@ contract CompoundResolver is Helpers {
             /* token.transferFrom(msg.sender, address(this), toDeposit); */
             CERC20Interface cToken = CERC20Interface(cErc20);
             setApproval(erc20, toDeposit, cErc20);
-            assert(cToken.mint(toDeposit) == 0);
+            assert(cToken.mint(toDeposit) == 0); // no error message on assert
         }
         emit LogMint(erc20, toDeposit, address(this));
     }
@@ -273,14 +277,15 @@ contract CompoundResolver is Helpers {
 
         address registry = ISmartWallet(address(this)).registry();
         uint256 fee = IRegistry(registry).getFee();
+        address payable feeRecipient = IRegistry(registry).feeRecipient();
 
         if (erc20 == getAddressETH()) {
-            address(uint160(registry)).transfer(
+            feeRecipient.transfer(
                 div(mul(tokenReturned, fee), 100000)
             );
         } else {
             ERC20Interface(erc20).transfer(
-                registry,
+                feeRecipient,
                 div(mul(tokenReturned, fee), 100000)
             );
         }

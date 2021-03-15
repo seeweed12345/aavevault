@@ -31,8 +31,8 @@ interface ISmartWallet {
 }
 
 contract TransferLogic {
-    event LogDeposit(address erc20, uint256 tokenAmt);
-    event LogWithdraw(address erc20, uint256 tokenAmt);
+    event LogDeposit(address indexed erc20, uint256 tokenAmt);
+    event LogWithdraw(address indexed erc20, uint256 tokenAmt);
 
     /**
      * @dev get ethereum address
@@ -46,6 +46,7 @@ contract TransferLogic {
      * @dev user must approve token transfer first
      */
     function deposit(address erc20, uint256 amount) external payable {
+        require(amount > 0, "ZERO-AMOUNT");
         if (erc20 != getAddressETH()) {
             IERC20(erc20).transferFrom(msg.sender, address(this), amount);
         }
@@ -79,5 +80,14 @@ contract TransferLogic {
         }
 
         emit LogWithdraw(erc20, amount);
+    }
+
+    /**
+     * @dev Remove ERC20 approval to certain target
+     */
+    function removeApproval(address erc20, address target) external {
+        if (erc20 != getAddressETH()) {
+            IERC20(erc20).approve(target, 0);
+        }
     }
 }
