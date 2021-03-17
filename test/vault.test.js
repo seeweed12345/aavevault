@@ -27,7 +27,7 @@ const MULTISIG = "0x9Fd332a4e9C7F2f0dbA90745c1324Cc170D16fE4";
 const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
-const YDAI_ADDRESS = "0xBFa4D8AA6d8a379aBFe7793399D3DdaCC5bBECBB";
+const YDAI_ADDRESS = "0x19D3364A399d251E894aC732651be8B0E4e85001";
 
 // HELPERS
 const toWei = (value) => web3.utils.toWei(String(value));
@@ -316,6 +316,8 @@ contract("Inverse Vaults", () => {
   });
 
   it("Should harvest profits into ETH", async function () {
+    await time.advanceBlock();
+
     await vault.harvest(10, { from: MULTISIG }); // onlyHarvester
   });
 

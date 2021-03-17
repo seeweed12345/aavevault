@@ -103,6 +103,7 @@ contract Vault is Ownable, Pausable, DividendToken {
 
     function underlyingYield() public returns (uint) {
         console.log("vault totalSupply", totalSupply());
+        console.log("calcTotalValue", calcTotalValue());
         return calcTotalValue().sub(totalSupply());
     }
 
