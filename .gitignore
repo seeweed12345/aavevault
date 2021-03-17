@@ -7,3 +7,5 @@ package-lock.json
 .vscode
 .openzeppelin
 scripts/vesting/data.js
+
+Addresses.txt
