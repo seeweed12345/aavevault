@@ -176,9 +176,10 @@ contract Vault is Ownable, Pausable, DividendToken {
     }
 
     function harvest(uint amount) external onlyHarvester returns (uint afterFee) {
+        console.log("underlyingYield", underlyingYield());
         require(amount <= underlyingYield(), "Amount larger than generated yield");
-        console.log("passed");
         strat.divest(amount);
+        console.log("DAI BALANCE", underlying.balanceOf(address(this)));
         if(performanceFee > 0) {
             uint fee = amount.mul(performanceFee).div(MAX_FEE);
             afterFee = amount.sub(fee);

@@ -79,6 +79,7 @@ contract InverseResolver is Helpers {
      event VaultDepositAndWait(address indexed erc20, uint256 tokenAmt);
      event VaultWithdraw(address indexed erc20, uint256 tokenAmt);
      event VaultWithdrawPending(address indexed erc20, uint256 tokenAmt);
+     event VaultClaim(address indexed erc20);
 
     function deposit(address erc20, uint256 tokenAmt, IVault vault) external payable {
         require(tokenAmt > 0, "ZERO-AMOUNT");
@@ -150,6 +151,11 @@ contract InverseResolver is Helpers {
         );
         IVault(vault).withdraw(tokenAmt);
         emit VaultWithdraw(vault, tokenAmt);
+    }
+
+    function claim(address vault) external {
+        IVault(vault).claim();
+        emit VaultClaim(vault);
     }
 
 }
