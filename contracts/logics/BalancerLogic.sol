@@ -4,12 +4,39 @@ pragma solidity ^0.7.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IBalancerPool.sol";
 import "../interfaces/IBalancerRegistry.sol";
+import "../interfaces/IWETH.sol";
+import "../utils/UniversalERC20.sol";
 
 contract BalancerLogic {
+    using SafeMath for uint256;
+    using UniversalERC20 for IERC20;
+    using UniversalERC20 for IWETH;
+
     IBalancerRegistry internal constant REGISTRY = IBalancerRegistry(
         0x65e67cbc342712DF67494ACEfc06fe951EE93982
     );
 
+    IWETH internal constant WETH = IWETH(
+        0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
+    );
+
+    /**
+     * @dev unlimited approval
+     */
+    function setApproval(
+        IERC20 erc20,
+        uint256 srcAmt,
+        address to
+    ) internal {
+        uint256 tokenAllowance = erc20.allowance(address(this), to);
+        if (srcAmt > tokenAllowance) {
+            erc20.approve(to, uint(-1));
+        }
+    }
+
+    /**
+     * @dev swap tokens in balancer in a certain pool index
+     */
     function swap(
         IERC20 fromToken,
         IERC20 destToken,
@@ -17,23 +44,38 @@ contract BalancerLogic {
         uint256 poolIndex
     ) external {
         uint256 realAmount = amount == uint256(-1)
-            ? fromToken.balanceOf(address(this))
+            ? fromToken.universalBalanceOf(address(this))
             : amount;
 
         address[] memory pools = REGISTRY.getBestPoolsWithLimit(
-            address(fromToken),
-            address(destToken),
+            address(fromToken.isETH() ? WETH : fromToken),
+            address(destToken.isETH() ? WETH : destToken),
             poolIndex + 1
         );
 
-        fromToken.approve(pools[poolIndex], realAmount);
+        if (fromToken.isETH()) {
+            WETH.deposit{value:amount}();
+        }
+
+        uint initialBalance;
+
+        if (destToken.isETH()) {
+            initialBalance = WETH.balanceOf(address(this));
+        }
+
+        setApproval(fromToken, realAmount, pools[poolIndex]);
 
         IBalancerPool(pools[poolIndex]).swapExactAmountIn(
-            fromToken,
+            fromToken.isETH() ? WETH : fromToken,
             realAmount,
-            destToken,
+            destToken.isETH() ? WETH : destToken,
             0,
             uint256(-1)
         );
+
+        if (destToken.isETH()) {
+            // Withdraw WETH received only
+            WETH.withdraw(WETH.balanceOf(address(this)).sub(initialBalance));
+        }
     }
 }
