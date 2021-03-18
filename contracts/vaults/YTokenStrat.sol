@@ -8,6 +8,7 @@ import "../libs/Timelock.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/Math.sol";
+import "hardhat/console.sol";
 
 contract YTokenStrat is IStrat {
     
@@ -53,6 +54,7 @@ contract YTokenStrat is IStrat {
         if(balance > buffer) {
             uint max = yToken.availableDepositLimit();
             yToken.deposit(Math.min(balance - buffer, max)); // can't underflow because of above if statement
+            // console.log("sharesBought", sharesBought);
         }
     }
 

@@ -60,4 +60,8 @@ interface CTokenInterface {
         address,
         uint256
     ) external returns (bool);
+
+    function underlying() external returns (address);
+
+    function mint(uint mintAmount) external returns (uint);
 }

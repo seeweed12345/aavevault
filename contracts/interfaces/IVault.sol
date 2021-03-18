@@ -25,4 +25,5 @@ interface IVault {
     function withdrawPending(uint amount) external;
     function claim() external;
     function unclaimedProfit(address user) external view returns (uint256);
+    function pending(address user) external view returns (uint256);
 }

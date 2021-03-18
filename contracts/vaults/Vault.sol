@@ -7,6 +7,7 @@ import "./DividendToken.sol";
 import "../libs/Timelock.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "hardhat/console.sol";
 
 contract Vault is Ownable, Pausable, DividendToken {
     using SafeMath for uint256;
