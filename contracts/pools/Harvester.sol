@@ -16,12 +16,10 @@ contract Harvester is Ownable {
         uint afterFee = vault.harvest(amount);
         uint durationSinceLastHarvest = block.timestamp.sub(vault.lastDistribution());
         IERC20Detailed from = vault.underlying();
-        console.log("harvester DAI Balance", from.balanceOf(address(this)));
         ratePerToken[vault] = afterFee.mul(10**(36-from.decimals())).div(vault.totalSupply()).div(durationSinceLastHarvest);
         IERC20 to = vault.target();
         from.approve(address(ROUTER), afterFee);
         uint received = ROUTER.swapExactTokensForTokens(afterFee, outMin, path, address(this), deadline)[path.length-1];
-        console.log("harvester ETH Balance", to.balanceOf(address(this)));
         to.approve(address(vault), received);
         vault.distribute(received);
     }

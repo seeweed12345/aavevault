@@ -4,6 +4,7 @@ const TransferLogic = artifacts.require("TransferLogic");
 const UniswapLogic = artifacts.require("UniswapLogic");
 const InverseLogic = artifacts.require("InverseLogic");
 const Vault = artifacts.require("Vault");
+const Harvester = artifacts.require("Harvester");
 const YTokenStrat = artifacts.require("YTokenStrat");
 const IYStrat = artifacts.require("IYStrat");
 const IERC20 = artifacts.require(
@@ -27,6 +28,8 @@ const MULTISIG = "0x9Fd332a4e9C7F2f0dbA90745c1324Cc170D16fE4";
 const YEARN_STRATEGIST = "0xc3d6880fd95e06c816cb030fac45b3ffe3651cb0";
 const YEARN_LEV_COMP_STRAT = "0x4031afd3B0F71Bace9181E554A9E680Ee4AbE7dF";
 const YEARN_AH_STRAT = "0x7D960F3313f3cB1BBB6BF67419d303597F3E2Fa8";
+const YEARN_BLEV = "0x77b7CD137Dd9d94e7056f78308D7F65D2Ce68910";
+const YEARN_OPTIMIZER = "0x32b8C26d0439e1959CEa6262CBabC12320b384c4";
 
 // TOKENS
 const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -107,15 +110,18 @@ contract("Inverse Vaults", () => {
     });
   });
 
+  it("should deploy the Harvester contract", async function () {
+    harvester = await Harvester.new();
+  });
+
   it("should deploy the vault contract", async function () {
     vault = await Vault.new(
       DAI_ADDRESS,
       WETH_ADDRESS,
-      MULTISIG,
+      harvester.address,
       "Test DAI to ETH Vault",
       "testDAI>ETH"
     );
-    console.log(vault.address);
   });
 
   it("should deploy the YTokenStrat contract", async function () {
@@ -327,36 +333,58 @@ contract("Inverse Vaults", () => {
 
   it("Should harvest profits for yDAI vault", async function () {
     await time.advanceBlock();
-    await time.increase(time.duration.days(30));
 
-    const yearnStrat = await IYStrat.at(YEARN_LEV_COMP_STRAT);
-    const yearnStrat2 = await IYStrat.at(YEARN_AH_STRAT);
+    const STRATS = [
+      YEARN_LEV_COMP_STRAT,
+      YEARN_AH_STRAT,
+      YEARN_BLEV,
+      YEARN_OPTIMIZER,
+    ];
 
-    let tx = await yearnStrat.harvest({ from: YEARN_STRATEGIST });
-    let { profit, loss } = tx.receipt.logs[0].args;
-    console.log("\tLEV COMP", "profit", String(profit), "loss", String(loss));
+    for (const i in STRATS) {
+      const yearnStrat = await IYStrat.at(STRATS[i]);
+      const tx = await yearnStrat.harvest({ from: YEARN_STRATEGIST });
+      const { profit, loss } = tx.receipt.logs[0].args;
+      console.log(
+        `\tStrat #${i}`,
+        "profit:",
+        fromWei(profit),
+        "loss:",
+        fromWei(loss)
+      );
+    }
 
-    tx = await yearnStrat2.harvest({ from: YEARN_STRATEGIST });
-    ({ profit, loss } = tx.receipt.logs[0].args);
-    console.log("\tALPHA", "profit", String(profit), "loss", String(loss));
-
-    const totalValue = await strat.calcTotalValue();
-    console.log("totalValue", fromWei(totalValue));
+    totalValue = await strat.calcTotalValue();
 
     const totalSupply = await vault.totalSupply();
-    console.log("totalSupply", fromWei(totalSupply));
+
+    assert(totalValue > totalSupply);
   });
 
-  // FAILING!!
-  it.skip("Should harvest profits into ETH", async function () {
+  it("Should have profits in ETHA vault", async function () {
+    const totalValue = await strat.calcTotalValue();
+    const totalSupply = await vault.totalSupply();
+
+    assert(totalValue > totalSupply);
+  });
+
+  it("Should harvest profits in ETHA Vault", async function () {
     await time.advanceBlock();
 
-    await vault.harvest(1000000, { from: MULTISIG }); // onlyHarvester
+    const now = Number(await time.latest());
+
+    await harvester.harvestVault(
+      vault.address,
+      toWei(0.01),
+      1,
+      [DAI_ADDRESS, WETH_ADDRESS],
+      now + 1
+    );
   });
 
-  // NEED PREVIOUS TO WORK
-  it.skip("Should claim ETH profits from vault", async function () {
-    const startETHBalance = await web3.eth.getBalance(wallet.address);
+  it("Should claim ETH profits from vault", async function () {
+    const weth = await IERC20.at(WETH_ADDRESS);
+    const startETHBalance = await weth.balanceOf(wallet.address);
 
     const data = web3.eth.abi.encodeFunctionCall(
       {
@@ -379,7 +407,8 @@ contract("Inverse Vaults", () => {
 
     console.log("\tGas Used:", tx.receipt.gasUsed);
 
-    const endETHBalance = await web3.eth.getBalance(wallet.address);
+    const endETHBalance = await weth.balanceOf(wallet.address);
+
     assert(new BN(endETHBalance).sub(new BN(startETHBalance)) > 0);
   });
 });

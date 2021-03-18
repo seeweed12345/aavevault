@@ -102,8 +102,6 @@ contract Vault is Ownable, Pausable, DividendToken {
     }
 
     function underlyingYield() public returns (uint) {
-        console.log("vault totalSupply", totalSupply());
-        console.log("calcTotalValue", calcTotalValue());
         return calcTotalValue().sub(totalSupply());
     }
 
@@ -176,10 +174,8 @@ contract Vault is Ownable, Pausable, DividendToken {
     }
 
     function harvest(uint amount) external onlyHarvester returns (uint afterFee) {
-        console.log("underlyingYield", underlyingYield());
         require(amount <= underlyingYield(), "Amount larger than generated yield");
         strat.divest(amount);
-        console.log("DAI BALANCE", underlying.balanceOf(address(this)));
         if(performanceFee > 0) {
             uint fee = amount.mul(performanceFee).div(MAX_FEE);
             afterFee = amount.sub(fee);

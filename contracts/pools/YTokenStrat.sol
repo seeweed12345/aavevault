@@ -54,7 +54,7 @@ contract YTokenStrat is IStrat {
         if(balance > buffer) {
             uint max = yToken.availableDepositLimit();
             uint sharesBought = yToken.deposit(Math.min(balance - buffer, max)); // can't underflow because of above if statement
-            console.log("sharesBought", sharesBought);
+            // console.log("sharesBought", sharesBought);
         }
     }
 
@@ -80,8 +80,6 @@ contract YTokenStrat is IStrat {
     }
 
     function calcTotalValue() external view override returns (uint) {
-        console.log("pricePerShare", yToken.pricePerShare());
-        console.log("totalYearnDeposits", totalYearnDeposits());
         return Math.max(totalYearnDeposits(), 1) // cannot be lower than 1 because we subtract 1 after
         .sub(1) // account for dust
         .add(underlying.balanceOf(address(this)));
