@@ -6,6 +6,7 @@ import "../interfaces/IBalancerPool.sol";
 import "../interfaces/IBalancerRegistry.sol";
 import "../interfaces/IWETH.sol";
 import "../utils/UniversalERC20.sol";
+import "hardhat/console.sol";
 
 contract BalancerLogic {
     using SafeMath for uint256;
@@ -27,7 +28,7 @@ contract BalancerLogic {
         IERC20 erc20,
         uint256 srcAmt,
         address to
-    ) internal {
+    ) internal {        
         uint256 tokenAllowance = erc20.allowance(address(this), to);
         if (srcAmt > tokenAllowance) {
             erc20.approve(to, uint(-1));
@@ -42,7 +43,7 @@ contract BalancerLogic {
         IERC20 destToken,
         uint256 amount,
         uint256 poolIndex
-    ) external {
+    ) external payable{
         uint256 realAmount = amount == uint256(-1)
             ? fromToken.universalBalanceOf(address(this))
             : amount;
@@ -63,7 +64,7 @@ contract BalancerLogic {
             initialBalance = WETH.balanceOf(address(this));
         }
 
-        setApproval(fromToken, realAmount, pools[poolIndex]);
+        setApproval(fromToken.isETH() ? WETH : fromToken, realAmount, pools[poolIndex]);
 
         IBalancerPool(pools[poolIndex]).swapExactAmountIn(
             fromToken.isETH() ? WETH : fromToken,

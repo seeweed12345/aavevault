@@ -12,10 +12,10 @@ require("hardhat-gas-reporter");
 module.exports = {
   networks: {
     hardhat: {
-      // forking: {
-      //   url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-      //   blockNumber: 11765131,
-      // },
+      forking: {
+        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+        blockNumber: 12058393,
+      },
     },
     local: {
       url: "http://localhost:8545",
