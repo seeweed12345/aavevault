@@ -18,16 +18,18 @@ const FEE = 1000;
 // TOKENS
 const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+const BPT = "0x7aFE74AE3C19f070c109A38C286684256ADC656C"; //WETH/DAI 50-50
 
 // HELPERS
 const toWei = (value) => web3.utils.toWei(String(value));
 const fromWei = (value) => Number(web3.utils.fromWei(String(value)));
 
 contract("Balancer Logic", ([user, multisig]) => {
-  let registry, wallet, balancer;
+  let registry, wallet, balancer, dai, bpt;
 
   before(async function () {
     dai = await IERC20.at(DAI_ADDRESS);
+    bpt = await IERC20.at(BPT);
 
     const EthaRegistry = await ethers.getContractFactory("EthaRegistry");
 
@@ -93,5 +95,39 @@ contract("Balancer Logic", ([user, multisig]) => {
 
     const balance = await dai.balanceOf(wallet.address);
     assert(balance > initial);
+  });
+
+  it("should add ETH/DAI liquidity in balancer", async function () {
+    const data = web3.eth.abi.encodeFunctionCall(
+      {
+        name: "addLiquidity",
+        type: "function",
+        inputs: [
+          {
+            type: "address",
+            name: "poolAddress",
+          },
+          {
+            type: "address",
+            name: "tokenIn",
+          },
+          {
+            type: "uint256",
+            name: "amountIn",
+          },
+        ],
+      },
+      [BPT, DAI_ADDRESS, toWei(1000)]
+    );
+
+    const tx = await wallet.execute([balancer.address], [data], false, {
+      from: user,
+      gas: web3.utils.toHex(5e6),
+    });
+
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+
+    const balance = await bpt.balanceOf(wallet.address);
+    assert(balance > 0);
   });
 });
