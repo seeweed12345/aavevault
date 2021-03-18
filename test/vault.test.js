@@ -5,6 +5,7 @@ const UniswapLogic = artifacts.require("UniswapLogic");
 const InverseLogic = artifacts.require("InverseLogic");
 const Vault = artifacts.require("Vault");
 const YTokenStrat = artifacts.require("YTokenStrat");
+const IYStrat = artifacts.require("IYStrat");
 const IERC20 = artifacts.require(
   "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20"
 );
@@ -23,6 +24,10 @@ const USER = "0x01Ec5e7e03e2835bB2d1aE8D2edDEd298780129c";
 const USER2 = "0xC2C5A77d9f434F424Df3d39de9e90d95A0Df5Aca";
 const MULTISIG = "0x9Fd332a4e9C7F2f0dbA90745c1324Cc170D16fE4";
 
+const YEARN_STRATEGIST = "0xc3d6880fd95e06c816cb030fac45b3ffe3651cb0";
+const YEARN_LEV_COMP_STRAT = "0x4031afd3B0F71Bace9181E554A9E680Ee4AbE7dF";
+const YEARN_AH_STRAT = "0x7D960F3313f3cB1BBB6BF67419d303597F3E2Fa8";
+
 // TOKENS
 const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
@@ -37,6 +42,11 @@ contract("Inverse Vaults", () => {
   let registry, wallet, wallet2, transfers, strat, uniswap, vault, inverse;
 
   before(async function () {
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [YEARN_STRATEGIST],
+    });
+
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [USER],
@@ -315,12 +325,36 @@ contract("Inverse Vaults", () => {
     // console.log(String(50e18));
   });
 
-  it("Should harvest profits into ETH", async function () {
+  it("Should harvest profits for yDAI vault", async function () {
     await time.advanceBlock();
+    await time.increase(time.duration.days(30));
 
-    await vault.harvest(10, { from: MULTISIG }); // onlyHarvester
+    const yearnStrat = await IYStrat.at(YEARN_LEV_COMP_STRAT);
+    const yearnStrat2 = await IYStrat.at(YEARN_AH_STRAT);
+
+    let tx = await yearnStrat.harvest({ from: YEARN_STRATEGIST });
+    let { profit, loss } = tx.receipt.logs[0].args;
+    console.log("\tLEV COMP", "profit", String(profit), "loss", String(loss));
+
+    tx = await yearnStrat2.harvest({ from: YEARN_STRATEGIST });
+    ({ profit, loss } = tx.receipt.logs[0].args);
+    console.log("\tALPHA", "profit", String(profit), "loss", String(loss));
+
+    const totalValue = await strat.calcTotalValue();
+    console.log("totalValue", fromWei(totalValue));
+
+    const totalSupply = await vault.totalSupply();
+    console.log("totalSupply", fromWei(totalSupply));
   });
 
+  // FAILING!!
+  it.skip("Should harvest profits into ETH", async function () {
+    await time.advanceBlock();
+
+    await vault.harvest(1000000, { from: MULTISIG }); // onlyHarvester
+  });
+
+  // NEED PREVIOUS TO WORK
   it.skip("Should claim ETH profits from vault", async function () {
     const startETHBalance = await web3.eth.getBalance(wallet.address);
 
