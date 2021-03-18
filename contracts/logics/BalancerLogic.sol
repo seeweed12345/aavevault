@@ -78,4 +78,45 @@ contract BalancerLogic {
             WETH.withdraw(WETH.balanceOf(address(this)).sub(initialBalance));
         }
     }
+
+    /**
+     * @dev add one-side liquidity to Balance Pool
+     */
+    function addLiquidity(
+        address poolAddress,
+        IERC20 tokenIn,
+        uint256 amountIn
+    ) external {
+        uint256 realAmountIn = amountIn == uint256(-1)
+            ? tokenIn.balanceOf(address(this))
+            : amountIn;
+        
+        setApproval(tokenIn, realAmountIn, poolAddress);
+
+        uint256 bptOut = IBalancerPool(poolAddress).joinswapExternAmountIn(
+            address(tokenIn),
+            realAmountIn,
+            1
+        );
+
+        require(bptOut > 0, "Balancer: Failed Adding Liquidity");
+    }
+
+    /**
+     * @dev remove one-side liquidity from Balance Pool
+     */
+    function removeLiquidity(
+        IERC20 poolAddress,
+        address tokenOut,
+        uint256 poolAmtIn
+    ) external {
+        uint256 realAmountIn = poolAmtIn == uint256(-1)
+            ? poolAddress.balanceOf(address(this))
+            : poolAmtIn;
+
+        uint256 tokenAmtOut = IBalancerPool(address(poolAddress))
+            .exitswapPoolAmountIn(tokenOut, realAmountIn, 1);
+
+        require(tokenAmtOut > 0, "Balancer: Failed Removing Liquidity");
+    }
 }
