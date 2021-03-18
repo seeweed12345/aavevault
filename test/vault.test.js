@@ -6,6 +6,7 @@ const InverseLogic = artifacts.require("InverseLogic");
 const Vault = artifacts.require("Vault");
 const Harvester = artifacts.require("Harvester");
 const YTokenStrat = artifacts.require("YTokenStrat");
+const IYToken = artifacts.require("IYToken");
 const IYStrat = artifacts.require("IYStrat");
 const IERC20 = artifacts.require(
   "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20"
@@ -42,7 +43,15 @@ const toWei = (value) => web3.utils.toWei(String(value));
 const fromWei = (value) => Number(web3.utils.fromWei(String(value)));
 
 contract("Inverse Vaults", () => {
-  let registry, wallet, wallet2, transfers, strat, uniswap, vault, inverse;
+  let registry,
+    wallet,
+    wallet2,
+    transfers,
+    strat,
+    uniswap,
+    vault,
+    inverse,
+    yDai;
 
   before(async function () {
     await hre.network.provider.request({
@@ -66,6 +75,7 @@ contract("Inverse Vaults", () => {
     });
 
     dai = await IERC20.at(DAI_ADDRESS);
+    yDai = await IYToken.at(YDAI_ADDRESS);
 
     const EthaRegistry = await ethers.getContractFactory("EthaRegistry");
 
@@ -332,6 +342,8 @@ contract("Inverse Vaults", () => {
   });
 
   it("Should harvest profits for yDAI vault", async function () {
+    let pps = await yDai.pricePerShare();
+    console.log("\tpps before:", fromWei(pps));
     await time.advanceBlock();
 
     const STRATS = [
@@ -354,11 +366,8 @@ contract("Inverse Vaults", () => {
       );
     }
 
-    totalValue = await strat.calcTotalValue();
-
-    const totalSupply = await vault.totalSupply();
-
-    assert(totalValue > totalSupply);
+    pps = await yDai.pricePerShare();
+    console.log("\tpps after:", fromWei(pps));
   });
 
   it("Should have profits in ETHA vault", async function () {

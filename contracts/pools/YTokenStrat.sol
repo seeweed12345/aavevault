@@ -53,7 +53,7 @@ contract YTokenStrat is IStrat {
         uint balance = underlying.balanceOf(address(this));
         if(balance > buffer) {
             uint max = yToken.availableDepositLimit();
-            uint sharesBought = yToken.deposit(Math.min(balance - buffer, max)); // can't underflow because of above if statement
+            yToken.deposit(Math.min(balance - buffer, max)); // can't underflow because of above if statement
             // console.log("sharesBought", sharesBought);
         }
     }
