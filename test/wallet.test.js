@@ -11,18 +11,14 @@ const IERC20 = artifacts.require(
 );
 
 const {
-  expectRevert,
-  balance: ozBalance,
   constants: { MAX_UINT256 },
 } = require("@openzeppelin/test-helpers");
-
-const { assertion } = require("@openzeppelin/test-helpers/src/expectRevert");
 const { assert } = require("hardhat");
 const hre = require("hardhat");
 
 const FEE = 1000;
 const USER = "0xdd79dc5b781b14ff091686961adc5d47e434f4b0";
-const CHI_HOLDER = "0xca3650b0a1158c7736253c74d67a536d805d2f3e";
+const CHI_HOLDER = "0x4f89e886B7281DB8DED9B604cEcE932063dFdCdc";
 const MULTISIG = "0x9Fd332a4e9C7F2f0dbA90745c1324Cc170D16fE4";
 const SOLO_MARGIN = "0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e";
 
