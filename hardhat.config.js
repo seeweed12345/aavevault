@@ -33,6 +33,12 @@ module.exports = {
       gasPrice: 10e9,
       gas: 6e6,
     },
+    fork: {
+      url: "http://fork.wafflefi.xyz/eth",
+      gasPrice: 100e9,
+      gas: 5e6,
+      timeout: 300000, // 5 min
+    },
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API,
