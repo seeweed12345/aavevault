@@ -342,8 +342,8 @@ contract("yDAI Vault", () => {
   });
 
   it("Should harvest profits for yDAI vault", async function () {
-    let pps = await yDai.pricePerShare();
-    console.log("\tpps before:", fromWei(pps));
+    const ppsStart = await yDai.pricePerShare();
+    console.log("\tpps before:", fromWei(ppsStart));
     await time.advanceBlock();
 
     const STRATS = [
@@ -366,8 +366,10 @@ contract("yDAI Vault", () => {
       );
     }
 
-    pps = await yDai.pricePerShare();
-    console.log("\tpps after:", fromWei(pps));
+    const ppsEnd = await yDai.pricePerShare();
+    console.log("\tpps after:", fromWei(ppsEnd));
+
+    assert(ppsEnd > ppsStart, "PPS lower after harvest");
   });
 
   it("Should have profits in ETHA vault", async function () {
