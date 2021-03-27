@@ -6,8 +6,10 @@
   "scripts": {
     "test": "hardhat test",
     "test-w": "hardhat test ./test/wallet.test.js",
-    "test-v": "hardhat test ./test/vault.test.js",
-    "test-v2": "hardhat test ./test/vault2.test.js",
+    "test-v": "hardhat test ./test/vaults/yDai-vault.test.js",
+    "test-v2": "hardhat test ./test/vaults/yUsdc-vault.test.js",
+    "test-v3": "hardhat test ./test/vaults/yEth-vault.test.js",
+    "test-vaults": "yarn test-v && yarn test-v2 && yarn test-v3",
     "test-m": "hardhat test ./test/metatx.test.js",
     "test-b": "hardhat test ./test/balancer.test.js",
     "test-n": "hardhat test ./test/nfts.test.js",

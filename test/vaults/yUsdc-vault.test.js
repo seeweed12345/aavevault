@@ -22,36 +22,29 @@ const { assert } = require("hardhat");
 const hre = require("hardhat");
 
 const FEE = 1000;
-const USER = "0x01Ec5e7e03e2835bB2d1aE8D2edDEd298780129c";
-const USER2 = "0xC2C5A77d9f434F424Df3d39de9e90d95A0Df5Aca";
-const MULTISIG = "0x9Fd332a4e9C7F2f0dbA90745c1324Cc170D16fE4";
+const USDC_HOLDER = "0xF977814e90dA44bFA03b6295A0616a897441aceC";
 
 const YEARN_STRATEGIST = "0xc3d6880fd95e06c816cb030fac45b3ffe3651cb0";
-const YEARN_LEV_COMP_STRAT = "0x4031afd3B0F71Bace9181E554A9E680Ee4AbE7dF";
-const YEARN_AH_STRAT = "0x7D960F3313f3cB1BBB6BF67419d303597F3E2Fa8";
-const YEARN_BLEV = "0x77b7CD137Dd9d94e7056f78308D7F65D2Ce68910";
-const YEARN_OPTIMIZER = "0x32b8C26d0439e1959CEa6262CBabC12320b384c4";
+const YEARN_STRATEGIST2 = "0xd0579bc5c0f839ea2bcc79bb127e2f39801903e2";
+
+const YEARN_STRATS = [
+  "0x4D7d4485fD600c61d840ccbeC328BfD76A050F87",
+  "0x86Aa49bf28d03B1A4aBEb83872cFC13c89eB4beD",
+];
+const YEARN_STRATS2 = ["0x79B3D0A9513C49D7Ea4BD6868a08aD966eC18f46"];
 
 // TOKENS
 const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
-const YDAI_ADDRESS = "0x19D3364A399d251E894aC732651be8B0E4e85001";
+const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+const YUSDC_ADDRESS = "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9";
 
 // HELPERS
 const toWei = (value) => web3.utils.toWei(String(value));
 const fromWei = (value) => Number(web3.utils.fromWei(String(value)));
 
-contract("Inverse Vaults", () => {
-  let registry,
-    wallet,
-    wallet2,
-    transfers,
-    strat,
-    uniswap,
-    vault,
-    inverse,
-    yDai;
+contract("yUSDC Vault", ([multisig, alice]) => {
+  let registry, wallet, transfers, strat, uniswap, vault, inverse, usdc, yUsdc;
 
   before(async function () {
     await hre.network.provider.request({
@@ -61,21 +54,16 @@ contract("Inverse Vaults", () => {
 
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
-      params: [USER],
+      params: [YEARN_STRATEGIST2],
     });
 
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
-      params: [USER2],
+      params: [USDC_HOLDER],
     });
 
-    await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [MULTISIG],
-    });
-
-    dai = await IERC20.at(DAI_ADDRESS);
-    yDai = await IYToken.at(YDAI_ADDRESS);
+    usdc = await IERC20.at(USDC_ADDRESS);
+    yUsdc = await IYToken.at(YUSDC_ADDRESS);
 
     const EthaRegistry = await ethers.getContractFactory("EthaRegistry");
 
@@ -86,8 +74,8 @@ contract("Inverse Vaults", () => {
 
     const proxy = await upgrades.deployProxy(EthaRegistry, [
       smartWalletImpl.address,
-      MULTISIG,
-      MULTISIG,
+      multisig,
+      multisig,
       FEE,
     ]);
 
@@ -100,24 +88,12 @@ contract("Inverse Vaults", () => {
     ]);
 
     // Smart Wallet Creation
-    await registry.deployWallet({ from: USER });
-    const swAddress = await registry.wallets(USER);
+    await registry.deployWallet({ from: alice });
+    const swAddress = await registry.wallets(alice);
     wallet = await SmartWallet.at(swAddress);
 
-    await registry.deployWallet({ from: USER2 });
-    const swAddress2 = await registry.wallets(USER2);
-    wallet2 = await SmartWallet.at(swAddress2);
-
-    // Deposit DAI
-    await dai.transfer(swAddress, toWei(200), { from: USER });
-    await dai.transfer(swAddress2, toWei(200), { from: USER2 });
-
-    // Fund Mulsitig with ETH
-    await web3.eth.sendTransaction({
-      from: USER,
-      to: MULTISIG,
-      value: toWei(0.5),
-    });
+    // Get USDC Tokens
+    await usdc.transfer(swAddress, String(200e6), { from: USDC_HOLDER });
   });
 
   it("should deploy the Harvester contract", async function () {
@@ -126,16 +102,16 @@ contract("Inverse Vaults", () => {
 
   it("should deploy the vault contract", async function () {
     vault = await Vault.new(
-      DAI_ADDRESS,
+      USDC_ADDRESS,
       WETH_ADDRESS,
       harvester.address,
-      "Test DAI to ETH Vault",
-      "testDAI>ETH"
+      "ETHA USDC/ETH Pool",
+      "eUSDCETH"
     );
   });
 
   it("should deploy the YTokenStrat contract", async function () {
-    strat = await YTokenStrat.new(vault.address, YDAI_ADDRESS);
+    strat = await YTokenStrat.new(vault.address, YUSDC_ADDRESS);
   });
 
   it("Should connect Strat to Vault", async function () {
@@ -144,11 +120,11 @@ contract("Inverse Vaults", () => {
     assert.equal(await vault.paused(), false);
   });
 
-  it("Should deposit DAI to vault", async function () {
+  it("Should deposit USDC to vault", async function () {
     await strat.totalYearnDeposits();
 
-    const daiBalance = await dai.balanceOf(wallet.address);
-    assert.equal(daiBalance, toWei(200));
+    const usdcBalance = await usdc.balanceOf(wallet.address);
+    assert.equal(usdcBalance, 200e6);
 
     const data = web3.eth.abi.encodeFunctionCall(
       {
@@ -169,11 +145,11 @@ contract("Inverse Vaults", () => {
           },
         ],
       },
-      [DAI_ADDRESS, String(50e18), vault.address]
+      [USDC_ADDRESS, String(50e6), vault.address]
     );
 
     const tx = await wallet.execute([inverse.address], [data], false, {
-      from: USER,
+      from: alice,
       gas: web3.utils.toHex(5e6),
     });
 
@@ -183,7 +159,7 @@ contract("Inverse Vaults", () => {
     assert(fromWei(vaultTokenBalance) > 0);
   });
 
-  it("Should deposit DAI to vault starting with ETH", async function () {
+  it("Should deposit USDC to vault starting with ETH", async function () {
     await strat.totalYearnDeposits();
 
     const data1 = web3.eth.abi.encodeFunctionCall(
@@ -205,7 +181,7 @@ contract("Inverse Vaults", () => {
           },
         ],
       },
-      [ETH_ADDRESS, DAI_ADDRESS, toWei(1)]
+      [ETH_ADDRESS, USDC_ADDRESS, toWei(1)]
     );
 
     const data2 = web3.eth.abi.encodeFunctionCall(
@@ -227,7 +203,7 @@ contract("Inverse Vaults", () => {
           },
         ],
       },
-      [DAI_ADDRESS, String(50e18), vault.address]
+      [USDC_ADDRESS, String(50e6), vault.address]
     );
 
     const tx = await wallet.execute(
@@ -235,7 +211,7 @@ contract("Inverse Vaults", () => {
       [data1, data2],
       false,
       {
-        from: USER,
+        from: alice,
         gas: web3.utils.toHex(5e6),
         value: toWei(1),
       }
@@ -247,64 +223,8 @@ contract("Inverse Vaults", () => {
     assert(fromWei(vaultTokenBalance) > 0);
   });
 
-  it("Should deposit DAI to vault using waiting functionality", async function () {
-    const data = web3.eth.abi.encodeFunctionCall(
-      {
-        name: "depositAndWait",
-        type: "function",
-        inputs: [
-          {
-            type: "address",
-            name: "erc20",
-          },
-          {
-            type: "uint256",
-            name: "tokenAmt",
-          },
-          {
-            type: "address",
-            name: "vault",
-          },
-        ],
-      },
-      [DAI_ADDRESS, String(50e18), vault.address]
-    );
-
-    let tx = await wallet.execute([inverse.address], [data], false, {
-      from: USER,
-      gas: web3.utils.toHex(5e6),
-    });
-
-    console.log("\tGas Used:", tx.receipt.gasUsed);
-
-    tx = await wallet2.execute([inverse.address], [data], false, {
-      from: USER2,
-      gas: web3.utils.toHex(5e6),
-    });
-
-    console.log("\tGas Used:", tx.receipt.gasUsed);
-  });
-
-  it("Should mint pending vault tokens (waiting)", async function () {
-    const initialBalance = await vault.balanceOf(wallet.address);
-    const initialBalance2 = await vault.balanceOf(wallet2.address);
-
-    const tx = await vault.mintPending({
-      from: USER2,
-      gas: web3.utils.toHex(5e6),
-    });
-
-    console.log("\tGas Used:", tx.receipt.gasUsed);
-
-    const finalBalance = await vault.balanceOf(wallet.address);
-    const finalBalance2 = await vault.balanceOf(wallet2.address);
-
-    assert(fromWei(finalBalance) > fromWei(initialBalance));
-    assert(fromWei(finalBalance2) > fromWei(initialBalance2));
-  });
-
-  it("Should withdraw DAI from vault", async function () {
-    const startDaiBalance = await dai.balanceOf(wallet.address);
+  it("Should withdraw USDC from vault", async function () {
+    const startUsdcBalance = await usdc.balanceOf(wallet.address);
 
     const data = web3.eth.abi.encodeFunctionCall(
       {
@@ -321,53 +241,58 @@ contract("Inverse Vaults", () => {
           },
         ],
       },
-      [String(50e18), vault.address]
+      [String(50e6), vault.address]
     );
 
     const tx = await wallet.execute([inverse.address], [data], false, {
-      from: USER,
+      from: alice,
       gas: web3.utils.toHex(5e6),
     });
 
     console.log("\tGas Used:", tx.receipt.gasUsed);
 
-    const endDaiBalance = await dai.balanceOf(wallet.address);
+    const endUsdcBalance = await usdc.balanceOf(wallet.address);
     assert.equal(
-      new BN(endDaiBalance).sub(new BN(startDaiBalance)),
-      String(50e18)
+      new BN(endUsdcBalance).sub(new BN(startUsdcBalance)),
+      String(50e6)
     );
-
-    // const vaultTokenBalance = await vault.balanceOf(wallet.address);
-    // console.log(String(50e18));
   });
 
-  it("Should harvest profits for yDAI vault", async function () {
-    let pps = await yDai.pricePerShare();
-    console.log("\tpps before:", fromWei(pps));
+  it("Should harvest profits for yUSDC vault", async function () {
+    const ppsStart = await yUsdc.pricePerShare();
+    console.log("\tpps before:", ppsStart * 1e-6);
     await time.advanceBlock();
 
-    const STRATS = [
-      YEARN_LEV_COMP_STRAT,
-      YEARN_AH_STRAT,
-      YEARN_BLEV,
-      YEARN_OPTIMIZER,
-    ];
-
-    for (const i in STRATS) {
-      const yearnStrat = await IYStrat.at(STRATS[i]);
+    for (const i in YEARN_STRATS) {
+      const yearnStrat = await IYStrat.at(YEARN_STRATS[i]);
       const tx = await yearnStrat.harvest({ from: YEARN_STRATEGIST });
       const { profit, loss } = tx.receipt.logs[0].args;
       console.log(
         `\tStrat #${i}`,
         "profit:",
-        fromWei(profit),
+        profit * 1e-6,
         "loss:",
-        fromWei(loss)
+        loss * 1e-6
       );
     }
 
-    pps = await yDai.pricePerShare();
-    console.log("\tpps after:", fromWei(pps));
+    for (const i in YEARN_STRATS2) {
+      const yearnStrat = await IYStrat.at(YEARN_STRATS2[i]);
+      const tx = await yearnStrat.harvest({ from: YEARN_STRATEGIST2 });
+      const { profit, loss } = tx.receipt.logs[0].args;
+      console.log(
+        `\tStrat #${i}`,
+        "profit:",
+        profit * 1e-6,
+        "loss:",
+        loss * 1e-6
+      );
+    }
+
+    const ppsEnd = await yUsdc.pricePerShare();
+    console.log("\tpps after:", ppsEnd * 1e-6);
+
+    assert(ppsEnd > ppsStart, "PPS lower after harvest");
   });
 
   it("Should have profits in ETHA vault", async function () {
@@ -384,9 +309,9 @@ contract("Inverse Vaults", () => {
 
     await harvester.harvestVault(
       vault.address,
-      toWei(0.01),
+      "1000",
       1,
-      [DAI_ADDRESS, WETH_ADDRESS],
+      [USDC_ADDRESS, WETH_ADDRESS],
       now + 1
     );
   });
@@ -410,7 +335,7 @@ contract("Inverse Vaults", () => {
     );
 
     const tx = await wallet.execute([inverse.address], [data], false, {
-      from: USER,
+      from: alice,
       gas: web3.utils.toHex(5e6),
     });
 
