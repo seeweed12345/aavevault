@@ -1,9 +1,16 @@
-// Artifacts
+// === ARTIFACTS ===
+
+// Basic Wallet
 const EthaRegistryTruffle = artifacts.require("EthaRegistry");
 const SmartWallet = artifacts.require("SmartWallet");
 const TransferLogic = artifacts.require("TransferLogic");
+
+// Swap
 const UniswapLogic = artifacts.require("UniswapLogic");
 const CurveLogic = artifacts.require("CurveLogic");
+const BalancerLogic = artifacts.require("BalancerLogic");
+
+// Lending
 const AaveLogic = artifacts.require("AaveLogic");
 const DyDxLogic = artifacts.require("DyDxLogic");
 const CompoundLogic = artifacts.require("CompoundLogic");
@@ -14,27 +21,61 @@ const MULTISIG = "0x9Fd332a4e9C7F2f0dbA90745c1324Cc170D16fE4";
 
 // Deployment
 async function main() {
+  let totalGas = 0;
+  let gasUsed;
+
+  console.log("\nDeploying Logics...");
+
   const transfers = await TransferLogic.new();
-  console.log("\nTransfers Logic:", transfers.address);
+  ({ gasUsed } = await web3.eth.getTransactionReceipt(
+    transfers.transactionHash
+  ));
+  totalGas += gasUsed;
+  console.log("\tTransfers Logic:", transfers.address);
 
   const aave = await AaveLogic.new();
-  console.log("\nAave Logic:", aave.address);
+  ({ gasUsed } = await web3.eth.getTransactionReceipt(aave.transactionHash));
+  totalGas += gasUsed;
+  console.log("\tAave Logic:", aave.address);
 
   const dydx = await DyDxLogic.new();
-  console.log("\nDydx Logic:", dydx.address);
+  ({ gasUsed } = await web3.eth.getTransactionReceipt(dydx.transactionHash));
+  totalGas += gasUsed;
+  console.log("\tDydx Logic:", dydx.address);
 
   const compound = await CompoundLogic.new();
-  console.log("\nCompound Logic:", compound.address);
+  ({ gasUsed } = await web3.eth.getTransactionReceipt(
+    compound.transactionHash
+  ));
+  totalGas += gasUsed;
+  console.log("\tCompound Logic:", compound.address);
 
   const uniswap = await UniswapLogic.new();
-  console.log("\nUniswap Logic:", uniswap.address);
+  ({ gasUsed } = await web3.eth.getTransactionReceipt(uniswap.transactionHash));
+  totalGas += gasUsed;
+  console.log("\tUniswap Logic:", uniswap.address);
 
   const curve = await CurveLogic.new();
-  console.log("\nCurve Logic:", curve.address);
+  ({ gasUsed } = await web3.eth.getTransactionReceipt(curve.transactionHash));
+  totalGas += gasUsed;
+  console.log("\tCurve Logic:", curve.address);
 
+  const balancer = await CurveLogic.new();
+  ({ gasUsed } = await web3.eth.getTransactionReceipt(
+    balancer.transactionHash
+  ));
+  totalGas += gasUsed;
+  console.log("\tBalancer Logic:", balancer.address);
+
+  console.log("\nDeploying Smart Wallet Implementation...");
   const smartWalletImpl = await SmartWallet.new();
-  console.log("\nSmart Wallet Implementation:", smartWalletImpl.address);
+  ({ gasUsed } = await web3.eth.getTransactionReceipt(
+    smartWalletImpl.transactionHash
+  ));
+  totalGas += gasUsed;
+  console.log("\tImplementation:", smartWalletImpl.address);
 
+  console.log("\nDeploying Registry...");
   const EthaRegistry = await ethers.getContractFactory("EthaRegistry");
   const proxy = await upgrades.deployProxy(EthaRegistry, [
     smartWalletImpl.address,
@@ -42,19 +83,26 @@ async function main() {
     MULTISIG,
     FEE,
   ]);
+  ({ gasUsed } = await web3.eth.getTransactionReceipt(
+    proxy.deployTransaction.hash
+  ));
+  totalGas += gasUsed;
   const registry = await EthaRegistryTruffle.at(proxy.address);
-  console.log("\nEtha Registry:", registry.address);
+  console.log("\tEtha Registry:", registry.address);
 
   console.log("\nEnabling logic contracts...");
-  await registry.enableLogicMultiple([
+  const { receipt } = await registry.enableLogicMultiple([
     transfers.address,
     uniswap.address,
     curve.address,
+    balancer.address,
     aave.address,
     compound.address,
     dydx.address,
   ]);
+  totalGas += receipt.gasUsed;
 
+  console.log("\nTotal Gas Used:", totalGas);
   console.log("\nDone!");
 }
 
