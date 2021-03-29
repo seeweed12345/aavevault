@@ -1,9 +1,10 @@
 // === ARTIFACTS ===
 
-// Basic Wallet
+// Protocol
 const EthaRegistryTruffle = artifacts.require("EthaRegistry");
 const SmartWallet = artifacts.require("SmartWallet");
 const TransferLogic = artifacts.require("TransferLogic");
+const InverseLogic = artifacts.require("InverseLogic");
 
 // Swap
 const UniswapLogic = artifacts.require("UniswapLogic");
@@ -67,6 +68,11 @@ async function main() {
   totalGas += gasUsed;
   console.log("\tBalancer Logic:", balancer.address);
 
+  const inverse = await InverseLogic.new();
+  ({ gasUsed } = await web3.eth.getTransactionReceipt(inverse.transactionHash));
+  totalGas += gasUsed;
+  console.log("\tInverseLogic:", inverse.address);
+
   console.log("\nDeploying Smart Wallet Implementation...");
   const smartWalletImpl = await SmartWallet.new();
   ({ gasUsed } = await web3.eth.getTransactionReceipt(
@@ -93,6 +99,7 @@ async function main() {
   console.log("\nEnabling logic contracts...");
   const { receipt } = await registry.enableLogicMultiple([
     transfers.address,
+    inverse.address,
     uniswap.address,
     curve.address,
     balancer.address,
