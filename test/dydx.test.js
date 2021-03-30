@@ -58,7 +58,7 @@ contract("Dydx Logic", ([multisig, alice]) => {
       0
     );
     assert(value, 0);
-    assert(!sign);
+    assert(!sign); // sign is false when 0 or negative (borrowed funds)
   });
 
   it("should invest ETH", async function () {
@@ -206,6 +206,13 @@ contract("Dydx Logic", ([multisig, alice]) => {
 
     console.log("\tGas Used:", tx.receipt.gasUsed);
 
+    const { value, sign } = await soloMargin.getAccountWei(
+      [wallet.address, 0],
+      3
+    );
+    assert(fromWei(value), 10);
+    assert(!sign); // negative balance
+
     const daiBalance = await dai.balanceOf(wallet.address);
     assert.equal(fromWei(daiBalance), 10);
   });
@@ -240,7 +247,55 @@ contract("Dydx Logic", ([multisig, alice]) => {
 
     console.log("\tGas Used:", tx.receipt.gasUsed);
 
+    const { value, sign } = await soloMargin.getAccountWei(
+      [wallet.address, 0],
+      3
+    );
+    assert(fromWei(value), 20);
+    assert(!sign); // negative balance
+
     const daiBalance = await dai.balanceOf(wallet.address);
     assert.equal(fromWei(daiBalance), 20);
+  });
+
+  it("should repay all DAI", async function () {
+    const data = web3.eth.abi.encodeFunctionCall(
+      {
+        name: "payback",
+        type: "function",
+        inputs: [
+          {
+            type: "uint256",
+            name: "marketId",
+          },
+          {
+            type: "address",
+            name: "erc20Addr",
+          },
+          {
+            type: "uint256",
+            name: "tokenAmt",
+          },
+        ],
+      },
+      [3, DAI_ADDRESS, toWei(20)]
+    );
+
+    const tx = await wallet.execute([dydx.address], [data], false, {
+      from: alice,
+      gas: web3.utils.toHex(5e6),
+    });
+
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+
+    const { value, sign } = await soloMargin.getAccountWei(
+      [wallet.address, 0],
+      3
+    );
+    assert(fromWei(value), 0);
+    assert(!sign); // sign is false when 0 or negative
+
+    const daiBalance = await dai.balanceOf(wallet.address);
+    assert.equal(fromWei(daiBalance), 0);
   });
 });

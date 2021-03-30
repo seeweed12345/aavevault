@@ -220,18 +220,7 @@ contract DydxResolver is Helpers {
             require(msg.value == tokenAmt, "INVALID-ETH-SENT");
             ERC20Interface(getAddressWETH()).deposit{value:toPayback}();
             setApproval(getAddressWETH(), toPayback, getSoloAddress());
-
-            // Refund extra eth sent
-            if(tokenAmt > toPayback) msg.sender.transfer(sub(tokenAmt, toPayback));
         } else {
-            require(
-                ERC20Interface(erc20Addr).transferFrom(
-                    msg.sender,
-                    address(this),
-                    toPayback
-                ),
-                "Allowance or not enough bal"
-            );
             setApproval(erc20Addr, toPayback, getSoloAddress());
         }
         ISoloMargin(getSoloAddress()).operate(
