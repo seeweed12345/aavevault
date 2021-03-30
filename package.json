@@ -10,6 +10,7 @@
     "test-v2": "hardhat test ./test/vaults/yUsdc-vault.test.js",
     "test-v3": "hardhat test ./test/vaults/yEth-vault.test.js",
     "test-vaults": "yarn test-v && yarn test-v2 && yarn test-v3",
+    "test-vaultDistribution": "hardhat test ./test/vaults/vaultWithDistribution.test.js",
     "test-m": "hardhat test ./test/metatx.test.js",
     "test-b": "hardhat test ./test/balancer.test.js",
     "test-n": "hardhat test ./test/nfts.test.js",
