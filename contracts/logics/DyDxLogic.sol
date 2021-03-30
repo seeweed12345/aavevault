@@ -249,8 +249,8 @@ contract DydxResolver is Helpers {
         address erc20Addr,
         uint256 tokenAmt
     ) external {
-        (uint256 toWithdraw, bool tokenSign) = getDydxBal(marketId);
-        require(tokenSign, "token not deposited");
+        (uint256 toWithdraw,) = getDydxBal(marketId);
+        require(toWithdraw > 0, "token not deposited");
 
         toWithdraw = toWithdraw > tokenAmt ? tokenAmt : toWithdraw;
         ISoloMargin solo = ISoloMargin(getSoloAddress());
@@ -290,23 +290,15 @@ contract DydxResolver is Helpers {
         address erc20Addr,
         uint256 tokenAmt
     ) external {
-        (, bool tokenSign) = getDydxBal(marketId);
-        require(!tokenSign, "token deposited");
+        (uint256 available,) = getDydxBal(marketId);
+        // user should use withdraw function when they have balance
+        require(available == 0, "withdraw first"); 
 
         ISoloMargin(getSoloAddress()).operate(
             getAccountArgs(),
             getActionsArgs(marketId, tokenAmt, false)
         );
-        if (erc20Addr == getAddressETH()) {
-            setApproval(getAddressWETH(), tokenAmt, getAddressWETH());
-            ERC20Interface(getAddressWETH()).withdraw(tokenAmt);
-            msg.sender.transfer(tokenAmt);
-        } else {
-            require(
-                ERC20Interface(erc20Addr).transfer(msg.sender, tokenAmt),
-                "Allowance or not enough bal"
-            );
-        }
+        
         emit LogBorrow(erc20Addr, tokenAmt, address(this));
     }
 }

@@ -6,6 +6,7 @@
   "scripts": {
     "test": "hardhat test",
     "test-w": "hardhat test ./test/wallet.test.js",
+    "test-dydx": "hardhat test ./test/dydx.test.js",
     "test-v": "hardhat test ./test/vaults/yDai-vault.test.js",
     "test-v2": "hardhat test ./test/vaults/yUsdc-vault.test.js",
     "test-v3": "hardhat test ./test/vaults/yEth-vault.test.js",
