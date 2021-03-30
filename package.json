@@ -15,6 +15,7 @@
     "test-n": "hardhat test ./test/nfts.test.js",
     "compile": "hardhat compile",
     "protocol": "hardhat run scripts/deploy.js --network fork",
+    "vaults": "hardhat run scripts/vaults.js --network hardhat",
     "dev-deploy": "hardhat run scripts/deploy.js --network hardhat",
     "factory": "hardhat run scripts/vesting/deployFactory.js --network local",
     "vest": "hardhat run scripts/vesting/vest.js --network local",
