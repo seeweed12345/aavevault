@@ -290,15 +290,15 @@ contract DydxResolver is Helpers {
         address erc20Addr,
         uint256 tokenAmt
     ) external {
-        (uint256 available,) = getDydxBal(marketId);
-        // user should use withdraw function when they have balance
-        require(available == 0, "withdraw first"); 
+        (uint256 available, bool sign) = getDydxBal(marketId);
+        // user should use withdraw function when they have positive balance
+        require(available == 0 || !sign, "withdraw first"); 
 
         ISoloMargin(getSoloAddress()).operate(
             getAccountArgs(),
             getActionsArgs(marketId, tokenAmt, false)
         );
-        
+
         emit LogBorrow(erc20Addr, tokenAmt, address(this));
     }
 }

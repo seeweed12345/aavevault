@@ -209,4 +209,38 @@ contract("Dydx Logic", ([multisig, alice]) => {
     const daiBalance = await dai.balanceOf(wallet.address);
     assert.equal(fromWei(daiBalance), 10);
   });
+
+  it("should borrow more DAI", async function () {
+    const data = web3.eth.abi.encodeFunctionCall(
+      {
+        name: "borrow",
+        type: "function",
+        inputs: [
+          {
+            type: "uint256",
+            name: "marketId",
+          },
+          {
+            type: "address",
+            name: "erc20Addr",
+          },
+          {
+            type: "uint256",
+            name: "tokenAmt",
+          },
+        ],
+      },
+      [3, DAI_ADDRESS, toWei(10)]
+    );
+
+    const tx = await wallet.execute([dydx.address], [data], false, {
+      from: alice,
+      gas: web3.utils.toHex(5e6),
+    });
+
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+
+    const daiBalance = await dai.balanceOf(wallet.address);
+    assert.equal(fromWei(daiBalance), 20);
+  });
 });
