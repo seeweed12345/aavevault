@@ -24,9 +24,6 @@ contract Vault is Ownable, Pausable, DividendToken {
     // if depositLimit = 0 then there is no deposit limit
     uint public depositLimit;
     uint public lastDistribution;
-    uint256 public pendingTotal = 0;
-    mapping(address => uint256) public pending;
-    address[] public addressesPendingForMinting;
     address public distribution;
 
     // EVENTS
@@ -73,16 +70,6 @@ contract Vault is Ownable, Pausable, DividendToken {
         }
     }
 
-    function depositAndWait(uint amount) external whenNotPaused {
-        require(amount > 0, "ZERO-AMOUNT");
-        if(depositLimit > 0) { // if deposit limit is 0, then there is no deposit limit
-            require(totalSupply().add(amount) <= depositLimit);
-        }
-        underlying.safeTransferFrom(msg.sender, address(this), amount);
-        pendingTotal = pendingTotal.add(amount);
-        pending[msg.sender] = (pending[msg.sender]).add(amount);
-        addressesPendingForMinting.push(msg.sender);
-    }
 
     function withdraw(uint amount) external {
         require(amount > 0, "ZERO-AMOUNT");
@@ -92,27 +79,6 @@ contract Vault is Ownable, Pausable, DividendToken {
         if(distribution != address(0)){
           IDistribution(distribution).withdraw(msg.sender, amount);
         }
-    }
-
-    function withdrawPending(uint amount) external {
-        require(amount > 0, "ZERO-AMOUNT");
-        require(amount >= pending[msg.sender], 'Withdrawal Amount Greater Than Deposited');
-        pendingTotal = pendingTotal.sub(amount);
-        pending[msg.sender] = (pending[msg.sender]).sub(amount);
-        underlying.safeTransfer(msg.sender, amount);
-    }
-
-    function mintPending() external{
-      underlying.safeTransfer(address(strat), pendingTotal);
-      strat.invest();
-      pendingTotal = 0;
-      for(uint256 i = 0; i< addressesPendingForMinting.length; i++){
-        if(pending[addressesPendingForMinting[i]] > 0){
-            _mint(addressesPendingForMinting[i], pending[addressesPendingForMinting[i]]);
-            pending[addressesPendingForMinting[i]] = 0;
-        }
-      }
-      delete addressesPendingForMinting;
     }
 
     function underlyingYield() public returns (uint) {
@@ -125,6 +91,10 @@ contract Vault is Ownable, Pausable, DividendToken {
 
     function claim() external {
         withdrawDividend(msg.sender);
+        if(distribution != address(0)){
+          IDistribution(distribution).getReward(msg.sender);
+        }
+
     }
 
     // Used to claim on behalf of certain contracts e.g. Uniswap pool
