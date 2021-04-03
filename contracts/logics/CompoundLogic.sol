@@ -208,20 +208,10 @@ contract Helpers is DSMath {
 }
 
 contract CompoundResolver is Helpers {
-    event LogMint(address indexed erc20, uint256 tokenAmt, address owner);
-    event LogRedeem(address indexed erc20, uint256 tokenAmt, address owner);
-    event LogBorrow(
-        address indexed erc20,
-        address indexed cErc20,
-        uint256 tokenAmt,
-        address owner
-    );
-    event LogRepay(
-        address indexed erc20,
-        address indexed cErc20,
-        uint256 tokenAmt,
-        address owner
-    );
+    event LogMint(address indexed erc20, uint256 tokenAmt);
+    event LogRedeem(address indexed erc20, uint256 tokenAmt);
+    event LogBorrow(address indexed erc20, uint256 tokenAmt);
+    event LogPayback(address indexed erc20, uint256 tokenAmt);
     event LogRepayBehalf(
         address indexed borrower,
         address indexed erc20,
@@ -258,7 +248,7 @@ contract CompoundResolver is Helpers {
             setApproval(erc20, toDeposit, cErc20);
             assert(cToken.mint(toDeposit) == 0); // no error message on assert
         }
-        emit LogMint(erc20, toDeposit, address(this));
+        emit LogMint(erc20, toDeposit);
     }
 
     function redeemCToken(
@@ -289,7 +279,7 @@ contract CompoundResolver is Helpers {
                 div(mul(tokenReturned, fee), 100000)
             );
         }
-        emit LogRedeem(erc20, tokenReturned, address(this));
+        emit LogRedeem(erc20, tokenReturned);
     }
 
     /**
@@ -327,7 +317,7 @@ contract CompoundResolver is Helpers {
                 div(mul(tokenToReturn, fee), 100000)
             );
         }
-        emit LogRedeem(erc20, tokenToReturn, address(this));
+        emit LogRedeem(erc20, tokenToReturn);
     }
 
     /**
@@ -343,7 +333,7 @@ contract CompoundResolver is Helpers {
             CTokenInterface(cErc20).borrow(tokenAmt) == 0,
             "got collateral?"
         );
-        emit LogBorrow(erc20, cErc20, tokenAmt, address(this));
+        emit LogBorrow(erc20, tokenAmt);
     }
 
     /**
@@ -363,7 +353,7 @@ contract CompoundResolver is Helpers {
                 msg.sender.transfer(sub(msg.value, toRepay));
             }
             cToken.repayBorrow{value:toRepay}();
-            emit LogRepay(erc20, cErc20, toRepay, address(this));
+            emit LogPayback(erc20, toRepay);
         } else {
             CERC20Interface cToken = CERC20Interface(cErc20);
             ERC20Interface token = ERC20Interface(erc20);
@@ -378,7 +368,7 @@ contract CompoundResolver is Helpers {
             setApproval(erc20, toRepay, cErc20);
             token.transferFrom(msg.sender, address(this), toRepay);
             require(cToken.repayBorrow(toRepay) == 0, "transfer approved?");
-            emit LogRepay(erc20, cErc20, toRepay, address(this));
+            emit LogPayback(erc20, toRepay);
         }
     }
 

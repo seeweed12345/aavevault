@@ -232,8 +232,10 @@ contract Helpers is DSMath {
 }
 
 contract AaveResolver is Helpers {
-    event LogMint(address erc20, uint256 tokenAmt, address owner);
-    event LogRedeem(address erc20, uint256 tokenAmt, address owner);
+    event LogMint(address indexed erc20, uint256 tokenAmt);
+    event LogRedeem(address indexed erc20, uint256 tokenAmt);
+    event LogBorrow(address indexed erc20, uint256 tokenAmt);
+    event LogPayback(address indexed erc20, uint256 tokenAmt);
 
     /**
      * @dev Deposit ETH/ERC20 and mint Aave Tokens
@@ -258,7 +260,7 @@ contract AaveResolver is Helpers {
             setApproval(erc20, tokenAmt, getLendingPoolCoreAddress());
             aToken.deposit(erc20, tokenAmt, 0);
         }
-        emit LogMint(erc20, tokenAmt, address(this));
+        emit LogMint(erc20, tokenAmt);
     }
 
     /**
@@ -290,7 +292,7 @@ contract AaveResolver is Helpers {
                 div(mul(aTokenAmt, fee), 100000)
             );
         }
-        emit LogRedeem(tokenAddress, aTokenAmt, address(this));
+        emit LogRedeem(tokenAddress, aTokenAmt);
     }
 }
 

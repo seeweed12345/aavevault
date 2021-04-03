@@ -68,7 +68,7 @@ async function main() {
   console.log("\tETHA yETH Vault:", vault3.address);
 
   const strat3 = await YTokenStrat.new(vault3.address, YETH_ADDRESS);
-  console.log("\tStrategy #2:", strat3.address);
+  console.log("\tStrategy #3:", strat3.address);
   await vault3.setStrat(strat3.address, false);
   assert.equal(await vault3.strat(), strat3.address);
   assert.equal(await vault3.paused(), false);
