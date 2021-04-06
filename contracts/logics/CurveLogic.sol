@@ -62,6 +62,8 @@ interface IERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
 }
 
+import "hardhat/console.sol";
+
 contract CurveLogic {
     // CURVE REGISTRY
     ICurveRegistry internal constant CURVE_REGISTRY = ICurveRegistry(
@@ -142,8 +144,8 @@ contract CurveLogic {
         int128 j;
 
         for(int128 x = 1; x <= 2; x++){
-            if(CURVE_COMPOUND.underlying_coins(x) == src) i = x;
-            if(CURVE_COMPOUND.underlying_coins(x) == dest) j = x;
+            if(CURVE_COMPOUND.underlying_coins(x-1) == src) i = x;
+            if(CURVE_COMPOUND.underlying_coins(x-1) == dest) j = x;
         }
 
         if (i == 0 || j == 0) {
@@ -164,8 +166,8 @@ contract CurveLogic {
         int128 j;
 
         for(int128 x = 1; x <= 3; x++){
-            if(CURVE_USDT.underlying_coins(x) == src) i = x;
-            if(CURVE_USDT.underlying_coins(x) == dest) j = x;
+            if(CURVE_USDT.underlying_coins(x-1) == src) i = x;
+            if(CURVE_USDT.underlying_coins(x-1) == dest) j = x;
         }
         
         if (i == 0 || j == 0) {
@@ -186,8 +188,8 @@ contract CurveLogic {
         int128 j;
 
         for(int128 x = 1; x <= 4; x++){
-            if(CURVE_Y.underlying_coins(x) == src) i = x;
-            if(CURVE_Y.underlying_coins(x) == dest) j = x;
+            if(CURVE_Y.underlying_coins(x-1) == src) i = x;
+            if(CURVE_Y.underlying_coins(x-1) == dest) j = x;
         }
         
         if (i == 0 || j == 0) {
@@ -208,8 +210,8 @@ contract CurveLogic {
         int128 j;
 
         for(int128 x = 1; x <= 4; x++){
-            if(CURVE_B.underlying_coins(x) == src) i = x;
-            if(CURVE_B.underlying_coins(x) == dest) j = x;
+            if(CURVE_B.underlying_coins(x-1) == src) i = x;
+            if(CURVE_B.underlying_coins(x-1) == dest) j = x;
         }
         
         if (i == 0 || j == 0) {
@@ -230,13 +232,15 @@ contract CurveLogic {
         int128 j;
 
         for(int128 x = 1; x <= 4; x++){
-            if(CURVE_S.underlying_coins(x) == src) i = x;
-            if(CURVE_S.underlying_coins(x) == dest) j = x;
+            if(CURVE_S.underlying_coins(x-1) == src) i = x;
+            if(CURVE_S.underlying_coins(x-1) == dest) j = x;
         }
         
         if (i == 0 || j == 0) {
             return 0;
         }
+
+        console.log("tokens", uint256(i),uint256(j));
 
         setApproval(src, srcAmt, address(CURVE_S));
 
@@ -252,8 +256,8 @@ contract CurveLogic {
         int128 j;
 
         for(int128 x = 1; x <= 4; x++){
-            if(CURVE_PAX.underlying_coins(x) == src) i = x;
-            if(CURVE_PAX.underlying_coins(x) == dest) j = x;
+            if(CURVE_PAX.underlying_coins(x-1) == src) i = x;
+            if(CURVE_PAX.underlying_coins(x-1) == dest) j = x;
         }
         
         if (i == 0 || j == 0) {
