@@ -61,7 +61,7 @@ async function main() {
   totalGas += gasUsed;
   console.log("\tCurve Logic:", curve.address);
 
-  const balancer = await CurveLogic.new();
+  const balancer = await BalancerLogic.new();
   ({ gasUsed } = await web3.eth.getTransactionReceipt(
     balancer.transactionHash
   ));
