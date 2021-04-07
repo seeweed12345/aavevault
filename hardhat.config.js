@@ -15,6 +15,7 @@ module.exports = {
       forking: {
         url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
         blockNumber: 12117000,
+        gasPrice: 110e9,
       },
     },
     local: {
@@ -34,7 +35,7 @@ module.exports = {
       gas: 6e6,
     },
     fork: {
-      url: "http://fork.wafflefi.xyz/eth",
+      url: process.env.FORK_URL,
       gasPrice: 100e9,
       gas: 5e6,
       timeout: 300000, // 5 min
