@@ -59,9 +59,6 @@ async function main() {
     "eVault"
   );
   console.log("\tETHA yUSDC Vault:", vault2.address);
-  console.log('setting distribution:');
-  vault2.updateDistribution(usdcDistribution);
-  console.log('distribution updated');
   const strat2 = await YTokenStrat.new(vault2.address, YUSDC_ADDRESS);
   console.log("\tStrategy #2:", strat2.address);
   await vault2.setStrat(strat2.address, false);
@@ -78,9 +75,6 @@ async function main() {
     "eVault"
   );
   console.log("\tETHA yETH Vault:", vault3.address);
-  console.log('setting distribution:');
-  vault3.updateDistribution(ethDistribution);
-  console.log('distribution updated');
   const strat3 = await YTokenStrat.new(vault3.address, YETH_ADDRESS);
   console.log("\tStrategy #3:", strat3.address);
   await vault3.setStrat(strat3.address, false);
@@ -90,11 +84,11 @@ async function main() {
 
   //Set distribution
   await factory.deploy(USDC_ADDRESS, rewardAmount, rewardsDuration, vault1.address);
-  console.log('deployed staking contract for USDC vault');
+  console.log('deployed distribution contract for USDC vault');
   await factory.deploy(DAI_ADDRESS, rewardAmount, rewardsDuration, vault2.address);
-  console.log('deployed staking contract for DAI vault');
+  console.log('deployed distribution contract for DAI vault');
   await factory.deploy(WETH_ADDRESS, rewardAmount, rewardsDuration, vault3.address);
-  console.log('deployed staking contract for ETH vault');
+  console.log('deployed distribution contract for ETH vault');
 
   let daiDistribution = await factory.stakingRewardsInfoByStakingToken(DAI_ADDRESS);
   daiDistribution = daiDistribution.stakingRewards;

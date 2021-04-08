@@ -18,7 +18,7 @@
     "compile": "hardhat compile",
     "deploy": "hardhat run scripts/deploy.js --network fork",
     "deploy-staking": "hardhat run scripts/staking/deployFactory.js --network fork",
-    "deploy-distributionVault": "hardhat run scripts/vaults/deployVault.js --network fork",
+    "deploy-distributionVault": "hardhat run scripts/vaults/deployVault.js --network hardhat",
     "protocol": "hardhat run scripts/deploy.js --network fork",
     "vaults": "hardhat run scripts/vaults.js --network fork",
     "complete": "yarn protocol && yarn vaults",
