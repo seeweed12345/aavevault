@@ -162,20 +162,11 @@ contract("Inverse Vaults", () => {
       vault.address
     );
 
-    daiDistribution = await factory.stakingRewardsInfoByStakingToken(
-      DAI_ADDRESS
-    );
-    daiDistribution = daiDistribution.stakingRewards;
-
-    vault.updateDistribution(daiDistribution);
-
     await etha.transfer(factory.address, REWARD_AMOUNT, { from: ETHA_HOLDER });
 
     await time.increase(15);
 
     await factory.notifyRewardAmounts();
-
-    distribution = await DistributionRewards.at(daiDistribution);
   });
 
   it("should deploy the YTokenStrat contract", async function () {
@@ -186,6 +177,17 @@ contract("Inverse Vaults", () => {
     await vault.setStrat(strat.address, false);
     assert.equal(await vault.strat(), strat.address);
     assert.equal(await vault.paused(), false);
+  });
+
+  it("should update distribution", async function () {
+    daiDistribution = await factory.stakingRewardsInfoByStakingToken(
+      DAI_ADDRESS
+    );
+    daiDistribution = daiDistribution.stakingRewards;
+
+    await vault.updateDistribution(daiDistribution);
+
+    distribution = await DistributionRewards.at(daiDistribution);
   });
 
   it("Should deposit DAI to vault", async function () {
@@ -387,7 +389,7 @@ contract("Inverse Vaults", () => {
 
     await harvester.harvestVault(
       vault.address,
-      toWei(0.01),
+      toWei(0.00001),
       1,
       [DAI_ADDRESS, WETH_ADDRESS],
       now + 1
