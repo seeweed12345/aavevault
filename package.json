@@ -6,6 +6,7 @@
   "scripts": {
     "test": "hardhat test",
     "test-w": "hardhat test ./test/wallet.test.js",
+    "test-dydx": "hardhat test ./test/dydx.test.js",
     "test-v": "hardhat test ./test/vaults/yDai-vault.test.js",
     "test-v2": "hardhat test ./test/vaults/yUsdc-vault.test.js",
     "test-v3": "hardhat test ./test/vaults/yEth-vault.test.js",
@@ -49,7 +50,7 @@
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@openzeppelin/hardhat-upgrades": "^1.6.0",
-    "@openzeppelin/test-helpers": "^0.5.6",
+    "@openzeppelin/test-helpers": "^0.5.10",
     "ethers": "^5.0.26",
     "hardhat": "^2.0.8",
     "hardhat-gas-reporter": "^1.0.4"
