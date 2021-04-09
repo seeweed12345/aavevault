@@ -75,18 +75,14 @@ contract Helpers is DSMath {
 }
 
 contract InverseResolver is Helpers {
-     event VaultDeposit(address indexed erc20, uint256 tokenAmt);
-     event VaultDepositAndWait(address indexed erc20, uint256 tokenAmt);
-     event VaultWithdraw(address indexed erc20, uint256 tokenAmt);
-     event VaultWithdrawPending(address indexed erc20, uint256 tokenAmt);
-     event VaultClaim(address indexed erc20);
+    event VaultDeposit(address indexed erc20, uint256 tokenAmt);
+    event VaultWithdraw(address indexed erc20, uint256 tokenAmt);
+    event VaultClaim(address indexed erc20);
 
     function deposit(address erc20, uint256 tokenAmt, IVault vault) external payable {
         require(tokenAmt > 0, "ZERO-AMOUNT");
-
-        ERC20Interface token = ERC20Interface(erc20);
         require(
-            tokenAmt <= token.balanceOf(address(this)),
+            tokenAmt <= ERC20Interface(erc20).balanceOf(address(this)),
             "INSUFFICIENT-BALANCE"
         );
         
@@ -95,19 +91,6 @@ contract InverseResolver is Helpers {
         ethaVault.deposit(tokenAmt);
 
         emit VaultDeposit(erc20, tokenAmt);
-    }
-
-    function depositAndWait(address erc20, uint256 tokenAmt, IVault vault) external payable {
-        require(tokenAmt > 0, "ZERO-AMOUNT");
-
-        ERC20Interface token = ERC20Interface(erc20);
-        require(
-            tokenAmt <= token.balanceOf(address(this)),
-            "INSUFFICIENT-BALANCE"
-        );
-        setApproval(erc20, tokenAmt, address(vault));
-        vault.depositAndWait(tokenAmt);
-        emit VaultDepositAndWait(erc20, tokenAmt);
     }
 
     function withdraw(IVault vault, uint256 vaultAmt) external payable {
@@ -119,38 +102,6 @@ contract InverseResolver is Helpers {
         setApproval(address(vault), vaultAmt, address(vault));
         vault.withdraw(vaultAmt);
         emit VaultWithdraw(address(vault), vaultAmt);
-    }
-
-    function withdrawAndWait(IVault vault, uint256 vaultAmt) external payable {
-        require(
-            vault.balanceOf(address(this)) >= vaultAmt,
-            "INSUFFICIENT-BALANCE"
-        );
-
-        setApproval(address(vault), vaultAmt, address(vault));
-        vault.withdrawPending(vaultAmt);
-        emit VaultWithdrawPending(address(vault), vaultAmt);
-    }
-
-    function withdrawPending(uint256 tokenAmt, address vault) external {
-        require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
-        IVault ethaVault = IVault(vault);
-        require(
-            tokenAmt <= ethaVault.pending(address(this)),
-            "amountToBeRedeemed-greaterThanAvailableBalance"
-        );
-        ethaVault.withdrawPending(tokenAmt);
-        emit VaultWithdrawPending(vault, tokenAmt);
-    }
-
-    function withdraw(uint256 tokenAmt, address vault) external {
-        require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
-        require(
-            tokenAmt <= ERC20Interface(vault).balanceOf(address(this)),
-            "amountToBeRedeemed-greaterThanAvailableBalance"
-        );
-        IVault(vault).withdraw(tokenAmt);
-        emit VaultWithdraw(vault, tokenAmt);
     }
 
     function claim(address vault) external {
