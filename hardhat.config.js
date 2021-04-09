@@ -13,7 +13,8 @@ module.exports = {
   networks: {
     hardhat: {
       forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+        // url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+        url: `https://cloudflare-eth.com`,
         blockNumber: 12117000,
         gasPrice: 110e9,
       },

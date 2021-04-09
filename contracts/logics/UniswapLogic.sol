@@ -9,6 +9,8 @@ import "../interfaces/IUniswapV2Router.sol";
 import "../interfaces/IWETH.sol";
 import "../utils/UniversalERC20.sol";
 
+import "hardhat/console.sol";
+
 contract UniswapLogic {
     using SafeMath for uint256;
     using UniversalERC20 for IERC20;
@@ -140,7 +142,7 @@ contract UniswapLogic {
 
         // Approve Router
         tokenAReal.universalApprove(address(UNI_ROUTER_V2), realAmtA);
-        tokenBReal.universalApprove(address(UNI_ROUTER_V2), realAmtB);
+        tokenBReal.universalApprove(address(UNI_ROUTER_V2), realAmtB);   
 
         UNI_ROUTER_V2.addLiquidity(
             address(tokenAReal),

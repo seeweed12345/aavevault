@@ -7,16 +7,14 @@ const IERC20 = artifacts.require(
 );
 
 const {
-  expectRevert,
+  expectEvent,
   constants: { MAX_UINT256 },
 } = require("@openzeppelin/test-helpers");
 const { assert } = require("hardhat");
 
 const FEE = 1000;
-const SOLO_MARGIN = "0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e";
 
 // TOKENS
-const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 
@@ -81,7 +79,11 @@ contract("Uniswap Logic", ([multisig, alice]) => {
       value: toWei(1),
     });
 
-    console.log(tx);
+    expectEvent(tx, "LogSwap", {
+      src: ETH_ADDRESS,
+      dest: DAI_ADDRESS,
+      amount: toWei(1),
+    });
 
     console.log("\tGas Used:", tx.receipt.gasUsed);
   });
