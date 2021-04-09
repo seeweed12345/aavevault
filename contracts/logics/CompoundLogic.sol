@@ -1,6 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.7.0;
 
+import "hardhat/console.sol";
+
 interface CTokenInterface {
     function redeem(uint256 redeemTokens) external returns (uint256);
 
@@ -255,7 +257,7 @@ contract CompoundResolver is Helpers {
         address erc20,
         address cErc20,
         uint256 cTokenAmt
-    ) external {
+    ) external payable{
         CTokenInterface cToken = CTokenInterface(cErc20);
         uint256 toBurn = cToken.balanceOf(address(this));
         if (toBurn > cTokenAmt) {
@@ -290,7 +292,7 @@ contract CompoundResolver is Helpers {
         address erc20,
         address cErc20,
         uint256 tokenAmt
-    ) external {
+    ) external payable{
         CTokenInterface cToken = CTokenInterface(cErc20);
         setApproval(cErc20, 10**50, cErc20);
         uint256 toBurn = cToken.balanceOf(address(this));
@@ -327,7 +329,7 @@ contract CompoundResolver is Helpers {
         address erc20,
         address cErc20,
         uint256 tokenAmt
-    ) external {
+    ) external payable{
         enterMarket(cErc20);
         require(
             CTokenInterface(cErc20).borrow(tokenAmt) == 0,
@@ -350,14 +352,13 @@ contract CompoundResolver is Helpers {
             uint256 borrows = cToken.borrowBalanceCurrent(address(this));
             if (toRepay > borrows) {
                 toRepay = borrows;
-                msg.sender.transfer(sub(msg.value, toRepay));
             }
             cToken.repayBorrow{value:toRepay}();
             emit LogPayback(erc20, toRepay);
         } else {
             CERC20Interface cToken = CERC20Interface(cErc20);
             ERC20Interface token = ERC20Interface(erc20);
-            uint256 toRepay = token.balanceOf(msg.sender);
+            uint256 toRepay = token.balanceOf(address(this));
             uint256 borrows = cToken.borrowBalanceCurrent(address(this));
             if (toRepay > tokenAmt) {
                 toRepay = tokenAmt;
@@ -366,7 +367,6 @@ contract CompoundResolver is Helpers {
                 toRepay = borrows;
             }
             setApproval(erc20, toRepay, cErc20);
-            token.transferFrom(msg.sender, address(this), toRepay);
             require(cToken.repayBorrow(toRepay) == 0, "transfer approved?");
             emit LogPayback(erc20, toRepay);
         }

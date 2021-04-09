@@ -10,6 +10,7 @@
     "test-uni": "hardhat test ./test/uniswap.test.js",
     "test-curve": "hardhat test ./test/curve.test.js",
     "test-bal": "hardhat test ./test/balancer.test.js",
+    "test-comp": "hardhat test ./test/compound.test.js",
     "test-v": "hardhat test ./test/vaults/yDai-vault.test.js",
     "test-v2": "hardhat test ./test/vaults/yUsdc-vault.test.js",
     "test-v3": "hardhat test ./test/vaults/yEth-vault.test.js",
