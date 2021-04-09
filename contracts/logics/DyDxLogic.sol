@@ -170,10 +170,10 @@ contract Helpers is DSMath {
 }
 
 contract DydxResolver is Helpers {
-    event LogMint(address indexed erc20Addr, uint256 tokenAmt, address owner);
-    event LogRedeem(address indexed erc20Addr, uint256 tokenAmt, address owner);
-    event LogBorrow(address indexed erc20Addr, uint256 tokenAmt, address owner);
-    event LogPayback(address indexed erc20Addr, uint256 tokenAmt, address owner);
+    event LogMint(address indexed erc20, uint256 tokenAmt);
+    event LogRedeem(address indexed erc20, uint256 tokenAmt);
+    event LogBorrow(address indexed erc20, uint256 tokenAmt);
+    event LogPayback(address indexed erc20, uint256 tokenAmt);
 
     /**
      * @dev Deposit ETH/ERC20
@@ -200,7 +200,7 @@ contract DydxResolver is Helpers {
             getAccountArgs(),
             getActionsArgs(marketId, toDeposit, true)
         );
-        emit LogMint(erc20Addr, toDeposit, address(this));
+        emit LogMint(erc20Addr, toDeposit);
     }
 
     /**
@@ -227,7 +227,7 @@ contract DydxResolver is Helpers {
             getAccountArgs(),
             getActionsArgs(marketId, toPayback, true)
         );
-        emit LogPayback(erc20Addr, toPayback, address(this));
+        emit LogPayback(erc20Addr, toPayback);
     }
 
     /**
@@ -266,8 +266,7 @@ contract DydxResolver is Helpers {
         }
         emit LogRedeem(
             erc20Addr == getAddressWETH() ? getAddressETH() : erc20Addr,
-            toWithdraw,
-            address(this)
+            toWithdraw
         );
     }
 
@@ -288,7 +287,7 @@ contract DydxResolver is Helpers {
             getActionsArgs(marketId, tokenAmt, false)
         );
 
-        emit LogBorrow(erc20Addr, tokenAmt, address(this));
+        emit LogBorrow(erc20Addr, tokenAmt);
     }
 }
 

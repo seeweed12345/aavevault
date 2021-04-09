@@ -1,15 +1,3 @@
-/**
- *Submitted for verification at Etherscan.io on 2020-11-12
-*/
-
-/**
- *Submitted for verification at Etherscan.io on 2020-10-21
-*/
-
-/**
- *Submitted for verification at Etherscan.io on 2020-09-16
-*/
-
 pragma solidity ^0.5.16;
 
 /**
@@ -529,8 +517,6 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     uint256 public rewardsDuration;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
-    address public treasury;
-    uint public treasuryFee;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
@@ -543,7 +529,6 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     constructor(
         address _rewardsDistribution,
         address _rewardsToken,
-        address _treasury,
         address _stakingToken,
         uint256 _rewardsDuration
     ) public {
@@ -551,7 +536,6 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         stakingToken = IERC20(_stakingToken);
         rewardsDistribution = _rewardsDistribution;
         rewardsDuration = _rewardsDuration;
-        treasury = _treasury;
     }
 
     /* ========== VIEWS ========== */
@@ -618,14 +602,10 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
 
     function getReward() public nonReentrant updateReward(msg.sender) {
         uint256 reward = rewards[msg.sender];
-        uint256 treasuryDistribution = (reward.mul(treasuryFee)).div(1000);
-        reward = reward.sub(treasuryDistribution);
         if (reward > 0) {
             rewards[msg.sender] = 0;
             rewardsToken.safeTransfer(msg.sender, reward);
-            rewardsToken.safeTransfer(treasury, treasuryDistribution);
             emit RewardPaid(msg.sender, reward);
-            emit RewardPaidToTreasury(treasury, treasuryDistribution);
         }
     }
 
@@ -656,10 +636,6 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         periodFinish = block.timestamp.add(rewardsDuration);
         emit RewardAdded(reward);
     }
-    
-    function updateFee(uint256 _fee) external onlyRewardsDistribution{
-        treasuryFee = _fee;
-    }
 
     /* ========== MODIFIERS ========== */
 
@@ -679,7 +655,6 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
-    event RewardPaidToTreasury(address treasury, uint256 reward);
 }
 
 interface IUniswapV2ERC20 {
@@ -690,7 +665,6 @@ contract StakingRewardsFactory is Ownable {
     // immutables
     address public rewardsToken;
     uint public stakingRewardsGenesis;
-    address public treasury;
 
     // the staking tokens for which the rewards contract has been deployed
     address[] public stakingTokens;
@@ -706,13 +680,11 @@ contract StakingRewardsFactory is Ownable {
 
     constructor(
         address _rewardsToken,
-        address _treasury,
         uint _stakingRewardsGenesis
     ) Ownable() public {
         require(_stakingRewardsGenesis >= block.timestamp, 'StakingRewardsFactory::constructor: genesis too soon');
 
         rewardsToken = _rewardsToken;
-        treasury = _treasury;
         stakingRewardsGenesis = _stakingRewardsGenesis;
     }
 
@@ -724,17 +696,9 @@ contract StakingRewardsFactory is Ownable {
         StakingRewardsInfo storage info = stakingRewardsInfoByStakingToken[stakingToken];
         require(info.stakingRewards == address(0), 'StakingRewardsFactory::deploy: already deployed');
 
-        info.stakingRewards = address(new StakingRewards(/*_rewardsDistribution=*/ address(this), rewardsToken, treasury, stakingToken, rewardsDuration));
+        info.stakingRewards = address(new StakingRewards(/*_rewardsDistribution=*/ address(this), rewardsToken, stakingToken, rewardsDuration));
         info.rewardAmount = rewardAmount;
         stakingTokens.push(stakingToken);
-    }
-    
-    function updateFee(uint _fee) public onlyOwner{
-        require(stakingTokens.length > 0, 'StakingRewardsFactory::updateFee: called before any deploys');
-        for (uint i = 0; i < stakingTokens.length; i++) {
-            StakingRewardsInfo storage info = stakingRewardsInfoByStakingToken[stakingTokens[i]];
-            StakingRewards(info.stakingRewards).updateFee(_fee);
-        }
     }
 
     ///// permissionless functions
@@ -766,8 +730,8 @@ contract StakingRewardsFactory is Ownable {
             StakingRewards(info.stakingRewards).notifyRewardAmount(rewardAmount);
         }
     }
-    
-    function transferTokens(address _token, uint _amount) public onlyOwner{
-         require(IERC20(_token).transfer(treasury, _amount), 'Transfer Failed');
+
+    function sweep(address recipient, address erc20, uint256 transferAmount) public onlyOwner{
+      IERC20(erc20).transfer(recipient, transferAmount);
     }
 }

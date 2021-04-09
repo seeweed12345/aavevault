@@ -304,53 +304,6 @@ contract("Inverse Vaults", () => {
     assert(fromWei(vaultTokenBalance) > 0);
   });
 
-  it("Should deposit DAI to vault using waiting functionality", async function () {
-    const data = web3.eth.abi.encodeFunctionCall(
-      {
-        name: "depositAndWait",
-        type: "function",
-        inputs: [
-          {
-            type: "address",
-            name: "erc20",
-          },
-          {
-            type: "uint256",
-            name: "tokenAmt",
-          },
-          {
-            type: "address",
-            name: "vault",
-          },
-        ],
-      },
-      [DAI_ADDRESS, String(50e18), vault.address]
-    );
-    let tx = await wallet.execute([inverse.address], [data], false, {
-      from: USER,
-      gas: web3.utils.toHex(5e6),
-    });
-    console.log("\tGas Used:", tx.receipt.gasUsed);
-    tx = await wallet2.execute([inverse.address], [data], false, {
-      from: USER2,
-      gas: web3.utils.toHex(5e6),
-    });
-    console.log("\tGas Used:", tx.receipt.gasUsed);
-  });
-
-  it("Should mint pending vault tokens (waiting)", async function () {
-   const initialBalance = await vault.balanceOf(wallet.address);
-   const initialBalance2 = await vault.balanceOf(wallet2.address);
-   const tx = await vault.mintPending({
-     from: USER2,
-     gas: web3.utils.toHex(5e6),
-   });
-   console.log("\tGas Used:", tx.receipt.gasUsed);
-   const finalBalance = await vault.balanceOf(wallet.address);
-   const finalBalance2 = await vault.balanceOf(wallet2.address);
-   assert(fromWei(finalBalance) > fromWei(initialBalance));
-   assert(fromWei(finalBalance2) > fromWei(initialBalance2));
- });
 
   it("Should withdraw DAI from vault", async function () {
     const startDaiBalance = await dai.balanceOf(wallet.address);
@@ -425,6 +378,7 @@ contract("Inverse Vaults", () => {
 
   it("Should harvest profits in ETHA Vault", async function () {
     await time.advanceBlock();
+    // time.increase(3600);
 
     const now = Number(await time.latest());
 
@@ -459,6 +413,9 @@ contract("Inverse Vaults", () => {
       });
       console.log("\tGas Used:", tx.receipt.gasUsed);
       const endETHBalance = await weth.balanceOf(wallet.address);
+      userEthaBalance = await etha.balanceOf(wallet.address);
+      console.log('user Etha Balance after claiming ETH profits from vault',fromWei(userEthaBalance));
       assert(new BN(endETHBalance).sub(new BN(startETHBalance)) > 0);
+      assert(fromWei(userEthaBalance) > 0);
     });
 });

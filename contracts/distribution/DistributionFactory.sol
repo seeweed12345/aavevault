@@ -6,7 +6,6 @@ contract DistributionFactory is Ownable {
     // immutables
     address public rewardsToken;
     uint public stakingRewardsGenesis;
-    address public vault;
 
     // the staking tokens for which the rewards contract has been deployed
     address[] public stakingTokens;
@@ -22,21 +21,19 @@ contract DistributionFactory is Ownable {
 
     constructor(
         address _rewardsToken,
-        uint _stakingRewardsGenesis,
-        address _vault
+        uint _stakingRewardsGenesis
     ) Ownable() public {
         require(_stakingRewardsGenesis >= block.timestamp, 'StakingRewardsFactory::constructor: genesis too soon');
 
         rewardsToken = _rewardsToken;
         stakingRewardsGenesis = _stakingRewardsGenesis;
-        vault = _vault;
     }
 
     ///// permissioned functions
 
     // deploy a staking reward contract for the staking token, and store the reward amount
     // the reward will be distributed to the staking reward contract no sooner than the genesis
-    function deploy(address stakingToken, uint rewardAmount, uint256 rewardsDuration) public onlyOwner {
+    function deploy(address stakingToken, uint rewardAmount, uint256 rewardsDuration, address vault) public onlyOwner {
         StakingRewardsInfo storage info = stakingRewardsInfoByStakingToken[stakingToken];
         require(info.stakingRewards == address(0), 'StakingRewardsFactory::deploy: already deployed');
 
