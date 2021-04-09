@@ -9,6 +9,9 @@ interface IWallet {
     event LogPayback(address indexed erc20, uint256 tokenAmt);
     event LogDeposit(address indexed erc20, uint256 tokenAmt);
     event LogWithdraw(address indexed erc20, uint256 tokenAmt);
+    event LogSwap(address indexed src, address indexed dest, uint amount);
+    event LogLiquidityAdd(address indexed tokenA, address indexed tokenB, uint amount);
+    event LogLiquidityRemove(address indexed tokenA, address indexed tokenB, uint amount);
     event DelegateAdded(address delegate);  
     event DelegateRemoved(address delegate);
 

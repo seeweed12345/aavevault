@@ -31,6 +31,11 @@ contract UniswapLogic {
         0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
     );
 
+    // EVENTS
+    event LogSwap(address indexed src, address indexed dest, uint amount);
+    event LogLiquidityAdd(address indexed tokenA, address indexed tokenB, uint amount);
+    event LogLiquidityRemove(address indexed tokenA, address indexed tokenB, uint amount);
+
     function swapV1(
         IERC20 fromToken,
         IERC20 destToken,
@@ -64,6 +69,8 @@ contract UniswapLogic {
                 returnAmount = toExchange.ethToTokenSwapInput{value:returnAmount}(1, block.timestamp);
             }
         }
+
+        emit LogSwap(address(fromToken), address(destToken), amount);
     }
 
     function swapV2(
@@ -102,6 +109,8 @@ contract UniswapLogic {
         if (destToken.isETH()) {
             WETH.withdraw(WETH.balanceOf(address(this)));
         }
+
+        emit LogSwap(address(fromToken), address(destToken), realAmt);
     }
 
     function addLiquidity(
