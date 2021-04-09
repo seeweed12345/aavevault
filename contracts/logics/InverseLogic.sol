@@ -101,12 +101,12 @@ contract InverseResolver is Helpers {
 
         setApproval(address(vault), vaultAmt, address(vault));
         vault.withdraw(vaultAmt);
-        emit VaultWithdraw(address(vault), vaultAmt);
+        emit VaultWithdraw(address(vault.underlying()), vaultAmt);
     }
 
-    function claim(address vault) external {
-        IVault(vault).claim();
-        emit VaultClaim(vault);
+    function claim(IVault vault) external {
+        vault.claim();
+        emit VaultClaim(address(vault.target()));
     }
 
 }

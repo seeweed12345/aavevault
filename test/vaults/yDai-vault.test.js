@@ -14,6 +14,7 @@ const IERC20 = artifacts.require(
 );
 
 const {
+  expectEvent,
   time,
   constants: { MAX_UINT256 },
 } = require("@openzeppelin/test-helpers");
@@ -178,6 +179,11 @@ contract("yDAI Vault", () => {
       gas: web3.utils.toHex(5e6),
     });
 
+    expectEvent(tx, "VaultDeposit", {
+      erc20: DAI_ADDRESS,
+      tokenAmt: toWei(50),
+    });
+
     console.log("\tGas Used:", tx.receipt.gasUsed);
 
     const vaultTokenBalance = await vault.balanceOf(wallet.address);
@@ -242,6 +248,11 @@ contract("yDAI Vault", () => {
       }
     );
 
+    expectEvent(tx, "VaultDeposit", {
+      erc20: DAI_ADDRESS,
+      tokenAmt: toWei(50),
+    });
+
     console.log("\tGas Used:", tx.receipt.gasUsed);
 
     const vaultTokenBalance = await vault.balanceOf(wallet.address);
@@ -272,6 +283,11 @@ contract("yDAI Vault", () => {
     const tx = await wallet.execute([inverse.address], [data], false, {
       from: USER,
       gas: web3.utils.toHex(5e6),
+    });
+
+    expectEvent(tx, "VaultWithdraw", {
+      erc20: DAI_ADDRESS,
+      tokenAmt: toWei(50),
     });
 
     console.log("\tGas Used:", tx.receipt.gasUsed);
@@ -356,6 +372,10 @@ contract("yDAI Vault", () => {
     const tx = await wallet.execute([inverse.address], [data], false, {
       from: USER,
       gas: web3.utils.toHex(5e6),
+    });
+
+    expectEvent(tx, "VaultClaim", {
+      erc20: WETH_ADDRESS,
     });
 
     console.log("\tGas Used:", tx.receipt.gasUsed);
