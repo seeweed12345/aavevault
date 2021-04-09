@@ -89,6 +89,9 @@ contract CurveLogic {
         0x06364f10B501e868329afBc005b3492902d6C763
     );
 
+    // EVENTS
+    event LogSwap(address indexed src, address indexed dest, uint amount);
+
     // TOKENS
     address constant DAI_ADDRESS = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address constant USDC_ADDRESS = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
@@ -155,6 +158,8 @@ contract CurveLogic {
         setApproval(src, srcAmt, address(CURVE_COMPOUND));
 
         CURVE_COMPOUND.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+
+        emit LogSwap(src, dest, srcAmt);
     }
 
     function swapOnCurveUSDT(
@@ -177,6 +182,8 @@ contract CurveLogic {
         setApproval(src, srcAmt, address(CURVE_USDT));
 
         CURVE_USDT.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+
+        emit LogSwap(src, dest, srcAmt);
     }
 
     function swapOnCurveY(
@@ -199,6 +206,8 @@ contract CurveLogic {
         setApproval(src, srcAmt, address(CURVE_Y));
 
         CURVE_Y.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+
+        emit LogSwap(src, dest, srcAmt);
     }
 
     function swapOnCurveB(
@@ -221,6 +230,8 @@ contract CurveLogic {
         setApproval(src, srcAmt, address(CURVE_B));
 
         CURVE_B.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+
+        emit LogSwap(src, dest, srcAmt);
     }
 
     function swapOnCurveSynth(
@@ -240,11 +251,11 @@ contract CurveLogic {
             return 0;
         }
 
-        console.log("tokens", uint256(i),uint256(j));
-
         setApproval(src, srcAmt, address(CURVE_S));
 
         CURVE_S.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+
+        emit LogSwap(src, dest, srcAmt);
     }
 
     function swapOnCurvePAX(
@@ -267,6 +278,8 @@ contract CurveLogic {
         setApproval(src, srcAmt, address(CURVE_PAX));
 
         CURVE_PAX.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+
+        emit LogSwap(src, dest, srcAmt);
     }
 
     // TODO: Generic Function to Swap on any Pool
