@@ -93,7 +93,7 @@ contract InverseResolver is Helpers {
         emit VaultDeposit(erc20, tokenAmt);
     }
 
-    function withdraw(IVault vault, uint256 vaultAmt) external payable {
+    function withdraw(uint256 vaultAmt, IVault vault) external payable {
         require(
             vault.balanceOf(address(this)) >= vaultAmt,
             "INSUFFICIENT-BALANCE"

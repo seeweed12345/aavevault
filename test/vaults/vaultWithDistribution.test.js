@@ -1,5 +1,6 @@
 const EthaRegistryTruffle = artifacts.require("EthaRegistry");
 const SmartWallet = artifacts.require("SmartWallet");
+const IWallet = artifacts.require("IWallet");
 const TransferLogic = artifacts.require("TransferLogic");
 const UniswapLogic = artifacts.require("UniswapLogic");
 const InverseLogic = artifacts.require("InverseLogic");
@@ -120,11 +121,11 @@ contract("Inverse Vaults", () => {
     // Smart Wallet Creation
     await registry.deployWallet({ from: USER });
     const swAddress = await registry.wallets(USER);
-    wallet = await SmartWallet.at(swAddress);
+    wallet = await IWallet.at(swAddress);
 
     await registry.deployWallet({ from: USER2 });
     const swAddress2 = await registry.wallets(USER2);
-    wallet2 = await SmartWallet.at(swAddress2);
+    wallet2 = await IWallet.at(swAddress2);
 
     // Deposit DAI
     await dai.transfer(swAddress, toWei(200), { from: USER });
@@ -152,16 +153,19 @@ contract("Inverse Vaults", () => {
     );
     genesis = Number(await time.latest()) + 15;
 
-    factory = await DistributionFactory.new(ETHA_ADDRESS, genesis, vault.address);
+    factory = await DistributionFactory.new(ETHA_ADDRESS, genesis);
 
     await factory.deploy(
       DAI_ADDRESS,
       REWARD_AMOUNT,
-      REWARD_DURATION
+      REWARD_DURATION,
+      vault.address
     );
 
-    daiDistribution = await factory.stakingRewardsInfoByStakingToken(DAI_ADDRESS);
-    daiDistribution = daiDistribution.stakingRewards
+    daiDistribution = await factory.stakingRewardsInfoByStakingToken(
+      DAI_ADDRESS
+    );
+    daiDistribution = daiDistribution.stakingRewards;
 
     vault.updateDistribution(daiDistribution);
 
@@ -225,17 +229,17 @@ contract("Inverse Vaults", () => {
     assert(fromWei(stakedBalance) == fromWei(vaultTokenBalance));
     await time.increase(3600);
     let earnedBalance = await distribution.earned(wallet.address);
-    console.log('ETHA earned = ', fromWei(earnedBalance));
+    console.log("ETHA earned = ", fromWei(earnedBalance));
     assert(fromWei(earnedBalance) > 0);
   });
 
   it("should only allow vaults to stake/withdraw", async function () {
     await expectRevert(
-      distribution.stake(USER, toWei("1000"),{from: USER}),
+      distribution.stake(USER, toWei("1000"), { from: USER }),
       "Invalid Access: Can only be accessed by ETHA Vaults"
     );
     await expectRevert(
-      distribution.withdraw(USER, toWei("1000"),{from: USER}),
+      distribution.withdraw(USER, toWei("1000"), { from: USER }),
       "Invalid Access: Can only be accessed by ETHA Vaults"
     );
   });
@@ -303,7 +307,6 @@ contract("Inverse Vaults", () => {
     const vaultTokenBalance = await vault.balanceOf(wallet.address);
     assert(fromWei(vaultTokenBalance) > 0);
   });
-
 
   it("Should withdraw DAI from vault", async function () {
     const startDaiBalance = await dai.balanceOf(wallet.address);
@@ -392,30 +395,33 @@ contract("Inverse Vaults", () => {
   });
 
   it("Should claim ETH profits from vault", async function () {
-      const weth = await IERC20.at(WETH_ADDRESS);
-      const startETHBalance = await weth.balanceOf(wallet.address);
-      const data = web3.eth.abi.encodeFunctionCall(
-        {
-          name: "claim",
-          type: "function",
-          inputs: [
-            {
-              type: "address",
-              name: "vault",
-            },
-          ],
-        },
-        [vault.address]
-      );
-      const tx = await wallet.execute([inverse.address], [data], false, {
-        from: USER,
-        gas: web3.utils.toHex(5e6),
-      });
-      console.log("\tGas Used:", tx.receipt.gasUsed);
-      const endETHBalance = await weth.balanceOf(wallet.address);
-      userEthaBalance = await etha.balanceOf(wallet.address);
-      console.log('user Etha Balance after claiming ETH profits from vault',fromWei(userEthaBalance));
-      assert(new BN(endETHBalance).sub(new BN(startETHBalance)) > 0);
-      assert(fromWei(userEthaBalance) > 0);
+    const weth = await IERC20.at(WETH_ADDRESS);
+    const startETHBalance = await weth.balanceOf(wallet.address);
+    const data = web3.eth.abi.encodeFunctionCall(
+      {
+        name: "claim",
+        type: "function",
+        inputs: [
+          {
+            type: "address",
+            name: "vault",
+          },
+        ],
+      },
+      [vault.address]
+    );
+    const tx = await wallet.execute([inverse.address], [data], false, {
+      from: USER,
+      gas: web3.utils.toHex(5e6),
     });
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+    const endETHBalance = await weth.balanceOf(wallet.address);
+    userEthaBalance = await etha.balanceOf(wallet.address);
+    console.log(
+      "user Etha Balance after claiming ETH profits from vault",
+      fromWei(userEthaBalance)
+    );
+    assert(new BN(endETHBalance).sub(new BN(startETHBalance)) > 0);
+    assert(fromWei(userEthaBalance) > 0);
+  });
 });
