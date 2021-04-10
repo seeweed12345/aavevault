@@ -11,6 +11,7 @@
     "test-curve": "hardhat test ./test/curve.test.js",
     "test-bal": "hardhat test ./test/balancer.test.js",
     "test-comp": "hardhat test ./test/compound.test.js",
+    "test-aave": "hardhat test ./test/aave.test.js",
     "test-v": "hardhat test ./test/vaults/yDai-vault.test.js",
     "test-v2": "hardhat test ./test/vaults/yUsdc-vault.test.js",
     "test-v3": "hardhat test ./test/vaults/yEth-vault.test.js",
