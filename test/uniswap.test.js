@@ -1,47 +1,37 @@
 const EthaRegistryTruffle = artifacts.require("EthaRegistry");
 const SmartWallet = artifacts.require("SmartWallet");
 const IWallet = artifacts.require("IWallet");
-const CurveLogic = artifacts.require("CurveLogic");
+const UniswapLogic = artifacts.require("UniswapLogic");
 const IERC20 = artifacts.require(
   "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20"
 );
 
 const {
-  expectRevert,
   expectEvent,
-  balance: ozBalance,
   constants: { MAX_UINT256 },
 } = require("@openzeppelin/test-helpers");
-
 const { assert } = require("hardhat");
-const hre = require("hardhat");
 
 const FEE = 1000;
-const DAI_HOLDER = "0x13aec50f5d3c011cd3fed44e2a30c515bd8a5a06";
 
 // TOKENS
-const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 
 // HELPERS
 const toWei = (value) => web3.utils.toWei(String(value));
 const fromWei = (value) => Number(web3.utils.fromWei(String(value)));
 
-contract("Curve Logic", ([user, multisig]) => {
-  let registry, wallet, curve, dai, usdc;
+contract("Uniswap Logic", ([multisig, alice]) => {
+  let registry, wallet, uniswap, soloMargin;
 
   before(async function () {
-    await hre.network.provider.request({
-      method: "hardhat_impersonateAccount",
-      params: [DAI_HOLDER],
-    });
-
     dai = await IERC20.at(DAI_ADDRESS);
-    usdc = await IERC20.at(USDC_ADDRESS);
 
     const EthaRegistry = await ethers.getContractFactory("EthaRegistry");
 
-    curve = await CurveLogic.new();
+    uniswap = await UniswapLogic.new();
+    uniEncode = new web3.eth.Contract(UniswapLogic.abi, uniswap.address);
     smartWalletImpl = await SmartWallet.new();
 
     const proxy = await upgrades.deployProxy(EthaRegistry, [
@@ -53,58 +43,62 @@ contract("Curve Logic", ([user, multisig]) => {
 
     registry = await EthaRegistryTruffle.at(proxy.address);
 
-    await registry.enableLogicMultiple([curve.address]);
-  });
+    await registry.enableLogicMultiple([uniswap.address]);
 
-  it("should deploy a smart wallet", async function () {
-    const tx = await registry.deployWallet({ from: user });
-    const swAddress = await registry.wallets(user);
+    await registry.deployWallet({ from: alice });
+    const swAddress = await registry.wallets(alice);
     wallet = await IWallet.at(swAddress);
-    console.log("\tUSER SW:", swAddress);
-    console.log("\tGas Used:", tx.receipt.gasUsed);
   });
 
-  it("should swap DAI for USDC in curve", async function () {
-    await dai.transfer(wallet.address, toWei(100), { from: DAI_HOLDER });
-
-    const initial = await usdc.balanceOf(wallet.address);
-
+  it("should swap ETH for DAI", async function () {
     const data = web3.eth.abi.encodeFunctionCall(
       {
-        name: "swapOnCurveSynth",
+        name: "swapV2",
         type: "function",
         inputs: [
           {
             type: "address",
-            name: "src",
+            name: "fromToken",
           },
           {
             type: "address",
-            name: "dest",
+            name: "destToken",
           },
           {
             type: "uint256",
-            name: "srcAmt",
+            name: "amount",
           },
         ],
       },
-      [DAI_ADDRESS, USDC_ADDRESS, toWei(100)]
+      [ETH_ADDRESS, DAI_ADDRESS, toWei(1)]
     );
 
-    const tx = await wallet.execute([curve.address], [data], false, {
-      from: user,
+    const tx = await wallet.execute([uniswap.address], [data], false, {
+      from: alice,
       gas: web3.utils.toHex(5e6),
+      value: toWei(1),
     });
 
     expectEvent(tx, "LogSwap", {
-      src: DAI_ADDRESS,
-      dest: USDC_ADDRESS,
-      amount: toWei(100),
+      src: ETH_ADDRESS,
+      dest: DAI_ADDRESS,
+      amount: toWei(1),
     });
 
     console.log("\tGas Used:", tx.receipt.gasUsed);
+  });
 
-    const balance = await usdc.balanceOf(wallet.address);
-    assert(balance > initial);
+  it("should swap ETH for DAI using encodeABI", async function () {
+    const data = await uniEncode.methods
+      .swapV2(ETH_ADDRESS, DAI_ADDRESS, toWei(1))
+      .encodeABI();
+
+    const tx = await wallet.execute([uniswap.address], [data], false, {
+      from: alice,
+      gas: web3.utils.toHex(5e6),
+      value: toWei(1),
+    });
+
+    console.log("\tGas Used:", tx.receipt.gasUsed);
   });
 });

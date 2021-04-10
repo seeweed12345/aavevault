@@ -1,5 +1,6 @@
 const EthaRegistryTruffle = artifacts.require("EthaRegistry");
 const SmartWallet = artifacts.require("SmartWallet");
+const IWallet = artifacts.require("IWallet");
 const DyDxLogic = artifacts.require("DyDxLogic");
 const ISoloMargin = artifacts.require("ISoloMargin");
 const IERC20 = artifacts.require(
@@ -8,6 +9,7 @@ const IERC20 = artifacts.require(
 
 const {
   expectRevert,
+  expectEvent,
   constants: { MAX_UINT256 },
 } = require("@openzeppelin/test-helpers");
 const { assert } = require("hardhat");
@@ -47,9 +49,9 @@ contract("Dydx Logic", ([multisig, alice]) => {
 
     await registry.enableLogicMultiple([dydx.address]);
 
-    const tx = await registry.deployWallet({ from: alice });
+    await registry.deployWallet({ from: alice });
     const swAddress = await registry.wallets(alice);
-    wallet = await SmartWallet.at(swAddress);
+    wallet = await IWallet.at(swAddress);
   });
 
   it("should get correct balance for ETH", async function () {
@@ -88,6 +90,11 @@ contract("Dydx Logic", ([multisig, alice]) => {
       from: alice,
       gas: web3.utils.toHex(5e6),
       value: toWei(0.1),
+    });
+
+    expectEvent(tx, "LogMint", {
+      erc20: ETH_ADDRESS,
+      tokenAmt: toWei(0.1),
     });
 
     console.log("\tGas Used:", tx.receipt.gasUsed);
@@ -162,6 +169,11 @@ contract("Dydx Logic", ([multisig, alice]) => {
       gas: web3.utils.toHex(5e6),
     });
 
+    expectEvent(tx, "LogRedeem", {
+      erc20: ETH_ADDRESS,
+      tokenAmt: toWei(0.02),
+    });
+
     console.log("\tGas Used:", tx.receipt.gasUsed);
 
     const { value, sign } = await soloMargin.getAccountWei(
@@ -202,6 +214,11 @@ contract("Dydx Logic", ([multisig, alice]) => {
     const tx = await wallet.execute([dydx.address], [data], false, {
       from: alice,
       gas: web3.utils.toHex(5e6),
+    });
+
+    expectEvent(tx, "LogBorrow", {
+      erc20: DAI_ADDRESS,
+      tokenAmt: toWei(10),
     });
 
     console.log("\tGas Used:", tx.receipt.gasUsed);
@@ -284,6 +301,11 @@ contract("Dydx Logic", ([multisig, alice]) => {
     const tx = await wallet.execute([dydx.address], [data], false, {
       from: alice,
       gas: web3.utils.toHex(5e6),
+    });
+
+    expectEvent(tx, "LogPayback", {
+      erc20: DAI_ADDRESS,
+      tokenAmt: toWei(20),
     });
 
     console.log("\tGas Used:", tx.receipt.gasUsed);

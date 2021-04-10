@@ -126,6 +126,7 @@ contract Vault is Ownable, Pausable, DividendToken {
     // Users must watch the timelock contract on Etherscan for any transactions
     function setStrat(IStrat strat_, bool force) external {
         if(address(strat) != address(0)) {
+            console.log("Setting strat");
             require(msg.sender == address(timelock));
             uint prevTotalValue = strat.calcTotalValue();
             strat.divest(prevTotalValue);
