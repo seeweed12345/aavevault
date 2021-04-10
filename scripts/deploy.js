@@ -25,7 +25,7 @@ async function main() {
   let totalGas = 0;
   let gasUsed;
 
-  console.log("\nDeploying Logics...");
+  console.log("\n\nDeploying Logics...");
 
   const transfers = await TransferLogic.new();
   ({ gasUsed } = await web3.eth.getTransactionReceipt(
