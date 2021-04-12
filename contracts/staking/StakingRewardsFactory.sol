@@ -727,6 +727,7 @@ contract StakingRewardsFactory is Ownable {
                 IERC20(rewardsToken).transfer(info.stakingRewards, rewardAmount),
                 'StakingRewardsFactory::notifyRewardAmount: transfer failed'
             );
+
             StakingRewards(info.stakingRewards).notifyRewardAmount(rewardAmount);
         }
     }

@@ -7,6 +7,7 @@
     "test": "hardhat test",
     "test-w": "hardhat test ./test/wallet.test.js",
     "test-r": "hardhat test ./test/registry.test.js",
+    "test-s": "hardhat test ./test/staking.test.js",
     "test-dydx": "hardhat test ./test/dydx.test.js",
     "test-uni": "hardhat test ./test/uniswap.test.js",
     "test-curve": "hardhat test ./test/curve.test.js",
