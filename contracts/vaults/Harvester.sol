@@ -15,12 +15,19 @@ contract Harvester is Ownable {
     function harvestVault(IVault vault, uint amount, uint outMin, address[] calldata path, uint deadline) public onlyOwner {
         uint afterFee = vault.harvest(amount);
         uint durationSinceLastHarvest = block.timestamp.sub(vault.lastDistribution());
+
         IERC20Detailed from = vault.underlying();
+        require(path[0] == address(from), "Incorrect underlying");
+
         ratePerToken[vault] = afterFee.mul(10**(36-from.decimals())).div(vault.totalSupply()).div(durationSinceLastHarvest);
+        
         IERC20 to = vault.target();
+        require(path[path.length-1] == address(to), "Incorrect target");
+
         from.approve(address(ROUTER), afterFee);
         uint received = ROUTER.swapExactTokensForTokens(afterFee, outMin, path, address(this), deadline)[path.length-1];
         to.approve(address(vault), received);
+
         vault.distribute(received);
     }
 
