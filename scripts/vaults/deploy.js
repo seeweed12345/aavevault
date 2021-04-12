@@ -24,14 +24,12 @@ const YUSDC_ADDRESS = "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9";
 const YDAI_ADDRESS = "0x19D3364A399d251E894aC732651be8B0E4e85001";
 const YETH_ADDRESS = "0xa9fE4601811213c340e850ea305481afF02f5b28";
 
-const ONE_DAY = 60 * 60 * 24;
-
-const rewardAmount = toWei("90000");
-const rewardsDuration = 60 * 60 * 24 * 90; // 3 Months
+const REWARD_AMOUNT = toWei("90000");
+const REWARDS_DURATION = 60 * 60 * 24 * 90; // 3 Months
 
 async function main() {
   const currentTime = await time.latest();
-  const genesis = Number(currentTime) + ONE_DAY;
+  const genesis = Number(currentTime) + REWARDS_DURATION;
 
   const factory = await DistributionFactory.new(ETHA_ADDRESS, genesis);
   console.log("\n\n\tDistribution Factory:", factory.address);
@@ -91,20 +89,20 @@ async function main() {
   console.log("\nDeploying distribution contracts");
   await factory.deploy(
     USDC_ADDRESS,
-    rewardAmount,
-    rewardsDuration,
+    REWARD_AMOUNT,
+    REWARDS_DURATION,
     vault1.address
   );
   await factory.deploy(
     DAI_ADDRESS,
-    rewardAmount,
-    rewardsDuration,
+    REWARD_AMOUNT,
+    REWARDS_DURATION,
     vault2.address
   );
   await factory.deploy(
     WETH_ADDRESS,
-    rewardAmount,
-    rewardsDuration,
+    REWARD_AMOUNT,
+    REWARDS_DURATION,
     vault3.address
   );
 
