@@ -17,7 +17,7 @@ const toWei = (value) => web3.utils.toWei(String(value));
 const WETH_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-const UNI_ADDRESS = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
+const LINK_ADDRESS = "0x514910771AF9Ca656af840dff83E8264EcF986CA";
 const ETHA_ADDRESS = "0x59E9261255644c411AfDd00bD89162d09D862e38";
 
 const YUSDC_ADDRESS = "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9";
@@ -73,9 +73,9 @@ async function main() {
   console.log("\nDeploying Vault 3 ...");
   const vault3 = await Vault.new(
     WETH_ADDRESS,
-    UNI_ADDRESS,
+    LINK_ADDRESS,
     harvester.address,
-    "ETHA ETH/UNI Vault",
+    "ETHA ETH/LINK Vault",
     "eVault"
   );
   console.log("\tETHA yETH Vault:", vault3.address);
