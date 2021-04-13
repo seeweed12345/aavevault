@@ -1,13 +1,12 @@
 const { time } = require("@openzeppelin/test-helpers");
+const fs = require("fs");
+const deployments = require("../../deployments.json");
 
 // === ARTIFACTS ===
 const Vault = artifacts.require("Vault");
 const Harvester = artifacts.require("Harvester");
 const YTokenStrat = artifacts.require("YTokenStrat");
-const IYToken = artifacts.require("IYToken");
-const IYStrat = artifacts.require("IYStrat");
 const DistributionFactory = artifacts.require("DistributionFactory");
-const DistributionRewards = artifacts.require("DistributionRewards");
 
 // const genesis = 1617924986; //Reward Distribution start time
 
@@ -20,6 +19,7 @@ const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 const LINK_ADDRESS = "0x514910771AF9Ca656af840dff83E8264EcF986CA";
 const ETHA_ADDRESS = "0x59E9261255644c411AfDd00bD89162d09D862e38";
 
+// === YEARN VAULTS AVAILABLE ===
 const YUSDC_ADDRESS = "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9";
 const YDAI_ADDRESS = "0x19D3364A399d251E894aC732651be8B0E4e85001";
 const YETH_ADDRESS = "0xa9fE4601811213c340e850ea305481afF02f5b28";
@@ -27,14 +27,18 @@ const YETH_ADDRESS = "0xa9fE4601811213c340e850ea305481afF02f5b28";
 const REWARD_AMOUNT = toWei("90000");
 const REWARDS_DURATION = 60 * 60 * 24 * 90; // 3 Months
 
+let data = deployments[hre.network.name];
+
 async function main() {
   const currentTime = await time.latest();
   const genesis = Number(currentTime) + REWARDS_DURATION;
 
   const factory = await DistributionFactory.new(ETHA_ADDRESS, genesis);
+  data["DistributionFactory"] = factory.address;
   console.log("\n\n\tDistribution Factory:", factory.address);
 
   const harvester = await Harvester.new();
+  data["Harvester"] = harvester.address;
   console.log("\tHarvester:", harvester.address);
 
   // === VAULT 1 ===
@@ -46,8 +50,10 @@ async function main() {
     "ETHA DAI/ETH Vault",
     "eVault"
   );
+  data["Vault1"] = vault1.address;
   console.log("\tETHA yDAI Vault:", vault1.address);
   const strat1 = await YTokenStrat.new(vault1.address, YDAI_ADDRESS);
+  data["Strat1"] = strat1.address;
   console.log("\tStrategy #1:", strat1.address);
   await vault1.setStrat(strat1.address, false);
   assert.equal(await vault1.strat(), strat1.address);
@@ -62,8 +68,10 @@ async function main() {
     "ETHA USDC/ETH Vault",
     "eVault"
   );
+  data["Vault2"] = vault2.address;
   console.log("\tETHA yUSDC Vault:", vault2.address);
   const strat2 = await YTokenStrat.new(vault2.address, YUSDC_ADDRESS);
+  data["Strat2"] = strat2.address;
   console.log("\tStrategy #2:", strat2.address);
   await vault2.setStrat(strat2.address, false);
   assert.equal(await vault2.strat(), strat2.address);
@@ -78,8 +86,10 @@ async function main() {
     "ETHA ETH/LINK Vault",
     "eVault"
   );
+  data["Vault3"] = vault3.address;
   console.log("\tETHA yETH Vault:", vault3.address);
   const strat3 = await YTokenStrat.new(vault3.address, YETH_ADDRESS);
+  data["Strat3"] = strat3.address;
   console.log("\tStrategy #3:", strat3.address);
   await vault3.setStrat(strat3.address, false);
   assert.equal(await vault3.strat(), strat3.address);
@@ -110,19 +120,26 @@ async function main() {
   let { stakingRewards } = await factory.stakingRewardsInfoByStakingToken(
     DAI_ADDRESS
   );
+  data["Dist1"] = stakingRewards;
   await vault1.updateDistribution(stakingRewards);
 
   ({ stakingRewards } = await factory.stakingRewardsInfoByStakingToken(
     USDC_ADDRESS
   ));
+  data["Dist2"] = stakingRewards;
   await vault2.updateDistribution(stakingRewards);
 
   ({ stakingRewards } = await factory.stakingRewardsInfoByStakingToken(
     WETH_ADDRESS
   ));
+  data["Dist3"] = stakingRewards;
   await vault3.updateDistribution(stakingRewards);
 
   //Transfer ETHA and call vault's notify reward method of distribution factory after the genesis time has passed
+
+  deployments[hre.network.name] = data;
+
+  fs.writeFileSync("deployments.json", JSON.stringify(deployments));
 
   console.log("\nDone!");
 }

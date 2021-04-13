@@ -1,4 +1,6 @@
 const { time } = require("@openzeppelin/test-helpers");
+const fs = require("fs");
+const deployments = require("../../deployments.json");
 
 const StakingRewardsFactory = artifacts.require("StakingRewardsFactory");
 
@@ -12,12 +14,15 @@ const ETHA_ADDRESS = "0x59E9261255644c411AfDd00bD89162d09D862e38";
 const REWARD_AMOUNT = toWei("90000");
 const REWARDS_DURATION = 60 * 60 * 24 * 90; // 3 Months
 
+let data = deployments[hre.network.name];
+
 async function main() {
   const currentTime = await time.latest();
   const genesis = Number(currentTime) + REWARDS_DURATION;
 
   console.log("\nDeploying Staking Factory...");
   const factory = await StakingRewardsFactory.new(ETHA_ADDRESS, genesis);
+  data["StakingRewardsFactory"] = factory.address;
   console.log("\tFactory Deployed:", factory.address);
 
   console.log("\nDeploying Staking Rewards...");
@@ -25,15 +30,22 @@ async function main() {
   let deployed = await factory.stakingRewardsInfoByStakingToken(
     ETHA_ETH_LP_UNI
   );
+  data["StakingRewards1"] = deployed.stakingRewards;
   console.log("\tETHA_ETH Uni Staking:", deployed.stakingRewards);
 
   await factory.deploy(ETHA_USDC_LP_UNI, REWARD_AMOUNT, REWARDS_DURATION);
   deployed = await factory.stakingRewardsInfoByStakingToken(ETHA_USDC_LP_UNI);
+  data["StakingRewards2"] = deployed.stakingRewards;
   console.log("\tETHA_USDC Uni Staking:", deployed.stakingRewards);
 
   await factory.deploy(ETHA_USDC_LP_BAL, REWARD_AMOUNT, REWARDS_DURATION);
   deployed = await factory.stakingRewardsInfoByStakingToken(ETHA_USDC_LP_BAL);
+  data["StakingRewards3"] = deployed.stakingRewards;
   console.log("\tETHA_USDC Bal Staking:", deployed.stakingRewards);
+
+  deployments[hre.network.name] = data;
+
+  fs.writeFileSync("deployments.json", JSON.stringify(deployments));
 
   console.log("\nDone!");
 }
