@@ -202,4 +202,43 @@ contract("Aave Logic", ([user, multisig]) => {
     const balance = await usdc.balanceOf(wallet.address);
     assert.equal(String(balance), 2 * Number(10e6));
   });
+
+  it("should repay USDC using V1", async function () {
+    const data = await aaveEncode.methods.repay(USDC, String(5e6)).encodeABI();
+    const tx = await wallet.execute([aave.address], [data], false, {
+      from: user,
+      gas: web3.utils.toHex(5e6),
+    });
+
+    expectEvent(tx, "LogPayback", {
+      erc20: USDC,
+      tokenAmt: String(5e6),
+    });
+
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+
+    const balance = await usdc.balanceOf(wallet.address);
+    assert.equal(String(balance), String(15e6));
+  });
+
+  it("should repay USDC using V2", async function () {
+    const data = await aaveEncode.methods
+      .repayV2(USDC, String(5e6))
+      .encodeABI();
+
+    const tx = await wallet.execute([aave.address], [data], false, {
+      from: user,
+      gas: web3.utils.toHex(5e6),
+    });
+
+    expectEvent(tx, "LogPayback", {
+      erc20: USDC,
+      tokenAmt: String(5e6),
+    });
+
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+
+    const balance = await usdc.balanceOf(wallet.address);
+    assert.equal(String(balance), Number(10e6));
+  });
 });

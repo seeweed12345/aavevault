@@ -431,9 +431,9 @@ contract AaveResolver is Helpers {
         AaveLendingPoolInterface _lendingPool = AaveLendingPoolInterface(
             getLendingPoolAddress()
         );
-        address realToken = erc20 == getAddressETH() ? getWethAddress() : erc20;
+        // address realToken = erc20 == getAddressETH() ? getWethAddress() : erc20;
 
-        _lendingPool.borrow(realToken, tokenAmt, 2, getReferralCode());
+        _lendingPool.borrow(erc20, tokenAmt, 2, getReferralCode());
 
         emit LogBorrow(erc20, tokenAmt);
     }
@@ -450,6 +450,51 @@ contract AaveResolver is Helpers {
         _lendingPool.borrow(realToken, tokenAmt, 2, getReferralCode(), address(this));
 
         emit LogBorrow(erc20, tokenAmt);
+    }
+
+    /**
+     * @dev Redeem ETH/ERC20 and burn Aave Tokens
+     * @param tokenAmt Amount of underlying tokens to borrow
+     */
+    function repay(address erc20, uint tokenAmt) external payable {        
+        AaveLendingPoolInterface _lendingPool = AaveLendingPoolInterface(
+            getLendingPoolAddress()
+        );
+
+        uint ethAmt = 0;
+
+        if (erc20 == getAddressETH()) {
+            ethAmt = tokenAmt;
+        } else {
+            setApproval(erc20, tokenAmt, getLendingPoolCoreAddress());
+        }
+
+        _lendingPool.repay{value:ethAmt}(erc20, tokenAmt, payable(address(this)));
+
+        emit LogPayback(erc20, tokenAmt);
+    }
+
+    /**
+     * @dev Redeem ETH/ERC20 and burn Aave Tokens
+     * @param tokenAmt Amount of underlying tokens to borrow
+     */
+    function repayV2(address erc20, uint tokenAmt) external payable {        
+        AaveLendingPoolInterfaceV2 _lendingPool = AaveLendingPoolInterfaceV2(
+            getLendingPoolAddressV2()
+        );
+
+        address realToken = erc20;
+
+        if (erc20 == getAddressETH()) {
+            IWETH(getWethAddress()).deposit{value:tokenAmt}();
+            realToken = getWethAddress();
+        }
+
+        setApproval(erc20, tokenAmt, getLendingPoolAddressV2());
+
+        _lendingPool.repay(realToken, tokenAmt, 2, address(this));
+
+        emit LogPayback(erc20, tokenAmt);
     }
 }
 
