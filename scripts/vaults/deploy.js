@@ -98,17 +98,17 @@ async function main() {
   //Staking Distribution Contracts
   console.log("\nDeploying distribution contracts");
   await factory.deploy(
-    USDC_ADDRESS,
+    DAI_ADDRESS,
     REWARD_AMOUNT,
     REWARDS_DURATION,
     vault1.address
   );
   await factory.deploy(
-    DAI_ADDRESS,
+    USDC_ADDRESS,
     REWARD_AMOUNT,
     REWARDS_DURATION,
     vault2.address
-  );
+  );  
   await factory.deploy(
     WETH_ADDRESS,
     REWARD_AMOUNT,
