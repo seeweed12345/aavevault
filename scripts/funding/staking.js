@@ -15,13 +15,13 @@ const TARGET = process.env.FUNDING_TARGET;
 
 async function main() {
   const lp1 = await IERC20.at(ETHA_ETH_LP_UNI);
-  await lp1.transfer(TARGET, toWei(50), { from: HOLDER });
+  await lp1.transfer(TARGET, toWei(10), { from: HOLDER });
 
   const lp2 = await IERC20.at(ETHA_USDC_LP_UNI);
-  await lp2.transfer(TARGET, toWei(0.05), { from: HOLDER });
+  await lp2.transfer(TARGET, toWei(0.01), { from: HOLDER });
 
   const lp3 = await IERC20.at(ETHA_USDC_LP_BAL);
-  await lp3.transfer(TARGET, toWei(50), { from: HOLDER });
+  await lp3.transfer(TARGET, toWei(10), { from: HOLDER });
 
   console.log("\nDone!");
 }
