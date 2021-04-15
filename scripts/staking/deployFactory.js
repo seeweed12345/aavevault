@@ -30,17 +30,17 @@ async function main() {
   let deployed = await factory.stakingRewardsInfoByStakingToken(
     ETHA_ETH_LP_UNI
   );
-  data["StakingRewards1"] = deployed.stakingRewards;
+  data["ETHA-ETH UNI"] = deployed.stakingRewards;
   console.log("\tETHA_ETH Uni Staking:", deployed.stakingRewards);
 
   await factory.deploy(ETHA_USDC_LP_UNI, REWARD_AMOUNT, REWARDS_DURATION);
   deployed = await factory.stakingRewardsInfoByStakingToken(ETHA_USDC_LP_UNI);
-  data["StakingRewards2"] = deployed.stakingRewards;
+  data["ETHA-USDC UNI"] = deployed.stakingRewards;
   console.log("\tETHA_USDC Uni Staking:", deployed.stakingRewards);
 
   await factory.deploy(ETHA_USDC_LP_BAL, REWARD_AMOUNT, REWARDS_DURATION);
   deployed = await factory.stakingRewardsInfoByStakingToken(ETHA_USDC_LP_BAL);
-  data["StakingRewards3"] = deployed.stakingRewards;
+  data["ETHA-USDC BAL"] = deployed.stakingRewards;
   console.log("\tETHA_USDC Bal Staking:", deployed.stakingRewards);
 
   deployments[hre.network.name] = data;

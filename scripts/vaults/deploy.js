@@ -50,11 +50,11 @@ async function main() {
     "ETHA DAI/ETH Vault",
     "eVault"
   );
-  data["Vault1"] = vault1.address;
+  data["DAIVault"] = vault1.address;
   console.log("\tETHA yDAI Vault:", vault1.address);
   const strat1 = await YTokenStrat.new(vault1.address, YDAI_ADDRESS);
-  data["Strat1"] = strat1.address;
-  console.log("\tStrategy #1:", strat1.address);
+  data["StratDAI"] = strat1.address;
+  console.log("\tStratDAI:", strat1.address);
   await vault1.setStrat(strat1.address, false);
   assert.equal(await vault1.strat(), strat1.address);
   assert.equal(await vault1.paused(), false);
@@ -68,11 +68,11 @@ async function main() {
     "ETHA USDC/ETH Vault",
     "eVault"
   );
-  data["Vault2"] = vault2.address;
+  data["USDCVault"] = vault2.address;
   console.log("\tETHA yUSDC Vault:", vault2.address);
   const strat2 = await YTokenStrat.new(vault2.address, YUSDC_ADDRESS);
-  data["Strat2"] = strat2.address;
-  console.log("\tStrategy #2:", strat2.address);
+  data["StratUSDC"] = strat2.address;
+  console.log("\tStratUSDC:", strat2.address);
   await vault2.setStrat(strat2.address, false);
   assert.equal(await vault2.strat(), strat2.address);
   assert.equal(await vault2.paused(), false);
@@ -86,11 +86,11 @@ async function main() {
     "ETHA ETH/LINK Vault",
     "eVault"
   );
-  data["Vault3"] = vault3.address;
+  data["ETHVault"] = vault3.address;
   console.log("\tETHA yETH Vault:", vault3.address);
   const strat3 = await YTokenStrat.new(vault3.address, YETH_ADDRESS);
-  data["Strat3"] = strat3.address;
-  console.log("\tStrategy #3:", strat3.address);
+  data["StratETH"] = strat3.address;
+  console.log("\tStratETH:", strat3.address);
   await vault3.setStrat(strat3.address, false);
   assert.equal(await vault3.strat(), strat3.address);
   assert.equal(await vault3.paused(), false);
@@ -108,7 +108,7 @@ async function main() {
     REWARD_AMOUNT,
     REWARDS_DURATION,
     vault2.address
-  );  
+  );
   await factory.deploy(
     WETH_ADDRESS,
     REWARD_AMOUNT,
@@ -120,19 +120,19 @@ async function main() {
   let { stakingRewards } = await factory.stakingRewardsInfoByStakingToken(
     DAI_ADDRESS
   );
-  data["Dist1"] = stakingRewards;
+  data["DistDAI"] = stakingRewards;
   await vault1.updateDistribution(stakingRewards);
 
   ({ stakingRewards } = await factory.stakingRewardsInfoByStakingToken(
     USDC_ADDRESS
   ));
-  data["Dist2"] = stakingRewards;
+  data["DistUSDC"] = stakingRewards;
   await vault2.updateDistribution(stakingRewards);
 
   ({ stakingRewards } = await factory.stakingRewardsInfoByStakingToken(
     WETH_ADDRESS
   ));
-  data["Dist3"] = stakingRewards;
+  data["DistETH"] = stakingRewards;
   await vault3.updateDistribution(stakingRewards);
 
   //Transfer ETHA and call vault's notify reward method of distribution factory after the genesis time has passed
