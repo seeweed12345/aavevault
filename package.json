@@ -25,6 +25,7 @@
     "compile": "hardhat compile",
     "staking": "hardhat run scripts/staking/deployFactory.js --network fork",
     "staking-init": "hardhat run scripts/staking/initialize.js --network fork",
+    "dist-init": "hardhat run scripts/vaults/initializeDist.js --network fork",
     "protocol": "hardhat run scripts/deploy.js --network fork",
     "vaults": "hardhat run scripts/vaults/deploy.js --network fork",
     "new-vault": "hardhat run scripts/vaults/newVault.js --network fork",

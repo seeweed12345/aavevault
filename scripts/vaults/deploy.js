@@ -31,7 +31,7 @@ let data = deployments[hre.network.name];
 
 async function main() {
   const currentTime = await time.latest();
-  const genesis = Number(currentTime) + REWARDS_DURATION;
+  const genesis = Number(currentTime) + 60;
 
   const factory = await DistributionFactory.new(ETHA_ADDRESS, genesis);
   data["DistributionFactory"] = factory.address;
