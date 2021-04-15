@@ -18,7 +18,7 @@ let data = deployments[hre.network.name];
 
 async function main() {
   const currentTime = await time.latest();
-  const genesis = Number(currentTime) + REWARDS_DURATION;
+  const genesis = Number(currentTime) + 60;
 
   console.log("\nDeploying Staking Factory...");
   const factory = await StakingRewardsFactory.new(ETHA_ADDRESS, genesis);
