@@ -11,6 +11,8 @@ const IERC20 = artifacts.require(
 );
 
 const {
+  expectRevert,
+  expectEvent,
   constants: { MAX_UINT256 },
 } = require("@openzeppelin/test-helpers");
 const { assert } = require("hardhat");
@@ -33,7 +35,7 @@ const CHI_ADDRESS = "0x0000000000004946c0e9F43F4Dee607b0eF1fA1c";
 const toWei = (value) => web3.utils.toWei(String(value));
 const fromWei = (value) => Number(web3.utils.fromWei(String(value)));
 
-contract("Smart Wallet", () => {
+contract("Smart Wallet", ([delegate, random]) => {
   let registry, wallet, transfers, compound, aave, dydx, uniswap, chi;
 
   before(async function () {
@@ -89,9 +91,24 @@ contract("Smart Wallet", () => {
     await chi.approve(swAddress, MAX_UINT256, { from: USER });
   });
 
-  it("should fund user with CHI and approve SW", async function () {
+  it.skip("should fund user with CHI and approve SW", async function () {
     await chi.transfer(USER, 200, { from: CHI_HOLDER });
     await chi.approve(wallet.address, MAX_UINT256, { from: USER });
+  });
+
+  it("only wallet owner can add a delegate", async function () {
+    await expectRevert(
+      wallet.addDelegate(delegate, { from: random }),
+      "ONLY-OWNER"
+    );
+    const tx = await wallet.addDelegate(delegate, { from: USER });
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+
+    expectEvent(tx, "DelegateAdded", { delegate });
+
+    const isDelegate = await wallet.isDelegate(delegate);
+
+    assert(isDelegate);
   });
 
   it("should deposit DAI to the smart wallet", async function () {
