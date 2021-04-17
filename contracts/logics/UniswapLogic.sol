@@ -9,8 +9,6 @@ import "../interfaces/IUniswapV2Router.sol";
 import "../interfaces/IWETH.sol";
 import "../utils/UniversalERC20.sol";
 
-import "hardhat/console.sol";
-
 contract UniswapLogic {
     using SafeMath for uint256;
     using UniversalERC20 for IERC20;
@@ -169,7 +167,6 @@ contract UniswapLogic {
         IERC20 tokenBReal = tokenB.isETH() ? WETH : tokenB;
 
         IUniswapV2Exchange poolToken = UNI_FACTORY_V2.getPair(tokenAReal, tokenBReal);
-        console.log(address(poolToken));
 
         uint256 realAmt = amtPoolTokens == uint256(-1)
             ? IERC20(address(poolToken)).universalBalanceOf(address(this))

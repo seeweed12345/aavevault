@@ -137,7 +137,7 @@ contract("Balancer Logic", ([user, multisig]) => {
 
     expectEvent(tx, "LogLiquidityAdd", {
       tokenA: DAI_ADDRESS,
-      amount: toWei(1000),
+      amountA: toWei(1000),
     });
 
     console.log("\tGas Used:", tx.receipt.gasUsed);
