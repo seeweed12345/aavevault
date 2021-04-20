@@ -54,19 +54,14 @@ contract("Curve Logic", ([user, multisig]) => {
     registry = await EthaRegistryTruffle.at(proxy.address);
 
     await registry.enableLogicMultiple([curve.address]);
-  });
 
-  it("should deploy a smart wallet", async function () {
-    const tx = await registry.deployWallet({ from: user });
+    await registry.deployWallet({ from: user });
     const swAddress = await registry.wallets(user);
     wallet = await IWallet.at(swAddress);
-    console.log("\tUSER SW:", swAddress);
-    console.log("\tGas Used:", tx.receipt.gasUsed);
+    await dai.transfer(wallet.address, toWei(100), { from: DAI_HOLDER });
   });
 
-  it("should swap DAI for USDC in curve", async function () {
-    await dai.transfer(wallet.address, toWei(100), { from: DAI_HOLDER });
-
+  it("should swap DAI for USDC in curve Synth Pool", async function () {
     const initial = await usdc.balanceOf(wallet.address);
 
     const data = web3.eth.abi.encodeFunctionCall(
@@ -105,6 +100,48 @@ contract("Curve Logic", ([user, multisig]) => {
     console.log("\tGas Used:", tx.receipt.gasUsed);
 
     const balance = await usdc.balanceOf(wallet.address);
+    assert(balance > initial);
+  });
+
+  it("should swap USDC for DAI in curve Comp Pool", async function () {
+    const initial = await dai.balanceOf(wallet.address);
+
+    const data = web3.eth.abi.encodeFunctionCall(
+      {
+        name: "swapOnCurveCompound",
+        type: "function",
+        inputs: [
+          {
+            type: "address",
+            name: "src",
+          },
+          {
+            type: "address",
+            name: "dest",
+          },
+          {
+            type: "uint256",
+            name: "srcAmt",
+          },
+        ],
+      },
+      [USDC_ADDRESS, DAI_ADDRESS, String(50e6)]
+    );
+
+    const tx = await wallet.execute([curve.address], [data], false, {
+      from: user,
+      gas: web3.utils.toHex(5e6),
+    });
+
+    expectEvent(tx, "LogSwap", {
+      src: USDC_ADDRESS,
+      dest: DAI_ADDRESS,
+      amount: String(50e6),
+    });
+
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+
+    const balance = await dai.balanceOf(wallet.address);
     assert(balance > initial);
   });
 });

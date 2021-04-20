@@ -15,10 +15,12 @@ const NFT_HOLDER = "0xc72aed14386158960d0e93fecb83642e68482e4b";
 const HASHMASKS = "0xc2c747e0f7004f9e8817db2ca4997657a7746928";
 
 // ERC1155
-const TOKEN_ID2 = 192593;
-const AMOUNT = 5;
-const NFT_HOLDER2 = "0x539c68764c0D676502A4EFa3355b53339542c4E2";
+const TOKEN_ID2 = 61296;
+const AMOUNT = 2;
+const NFT_HOLDER2 = "0x68cb3f0c1a609c4acfa67775a2d26c1c7aae7d13";
 const RARIBLE = "0xd07dc4262BCDbf85190C01c996b4C06a461d2430";
+
+const toWei = (value) => web3.utils.toWei(String(value));
 
 contract("Smart Wallet", ([multisig, alice, bob, charlie]) => {
   let registry, wallet, nftTransfers, erc721, erc1155;
@@ -147,6 +149,13 @@ contract("Smart Wallet", ([multisig, alice, bob, charlie]) => {
   });
 
   it("should be able to receive ERC1155 tokens", async function () {
+    // Fund holder with eth
+    await web3.eth.sendTransaction({
+      from: alice,
+      to: NFT_HOLDER2,
+      value: toWei(1),
+    });
+
     await erc1155.safeTransferFrom(
       NFT_HOLDER2,
       wallet.address,
