@@ -100,6 +100,7 @@ contract SmartWallet is UserAuth {
         require(_user != address(0), "ZERO ADDRESS");
         registry = _registry;
         owner = _user;
+        isDelegate[_user] = true;
         chi = IGasToken(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
     }
 
