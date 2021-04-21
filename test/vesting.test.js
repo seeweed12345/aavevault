@@ -73,8 +73,7 @@ contract("Vesting", ([owner, alice, bob, charlie, random]) => {
 
     amountPerPeriod = amounts[1];
 
-    // Vesting periods (first March 8th at 11:00 CET (10am UTC), rest every 30 days)
-    let vestingPeriods = [1615197600];
+    let vestingPeriods = [Number(await time.latest()) + 3600]; // 1h from now
     for (let i = 1; i < TOTAL_PERIODS; i++) {
       vestingPeriods.push(
         vestingPeriods[0] + Number(time.duration.days(i * PERIOD_DAYS))
@@ -126,6 +125,8 @@ contract("Vesting", ([owner, alice, bob, charlie, random]) => {
     } = await instance.getGlobalData();
     const releaseableAmount = await factory.releaseableAmount(alice);
     const balance = await etha.balanceOf(instance.address);
+
+    console.log(fromWei(releaseableAmount));
 
     assert.equal(token, etha.address);
     assert.equal(beneficiary, alice);
