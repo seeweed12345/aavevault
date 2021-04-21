@@ -517,6 +517,7 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     uint256 public rewardsDuration;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
+    address public owner;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
@@ -530,12 +531,15 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         address _rewardsDistribution,
         address _rewardsToken,
         address _stakingToken,
-        uint256 _rewardsDuration
+        uint256 _rewardsDuration,
+        address _owner
+
     ) public {
         rewardsToken = IERC20(_rewardsToken);
         stakingToken = IERC20(_stakingToken);
         rewardsDistribution = _rewardsDistribution;
         rewardsDuration = _rewardsDuration;
+        owner = _owner;
     }
 
     /* ========== VIEWS ========== */
@@ -568,20 +572,6 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
 
     function getRewardForDuration() external view returns (uint256) {
         return rewardRate.mul(rewardsDuration);
-    }
-
-    /* ========== MUTATIVE FUNCTIONS ========== */
-
-    function stakeWithPermit(uint256 amount, uint deadline, uint8 v, bytes32 r, bytes32 s) external nonReentrant updateReward(msg.sender) {
-        require(amount > 0, "Cannot stake 0");
-        _totalSupply = _totalSupply.add(amount);
-        _balances[msg.sender] = _balances[msg.sender].add(amount);
-
-        // permit
-        IUniswapV2ERC20(address(stakingToken)).permit(msg.sender, address(this), amount, deadline, v, r, s);
-
-        stakingToken.safeTransferFrom(msg.sender, address(this), amount);
-        emit Staked(msg.sender, amount);
     }
 
     function stake(uint256 amount) external nonReentrant updateReward(msg.sender) {
@@ -649,6 +639,13 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         _;
     }
 
+    function sweep(address recipient, address erc20, uint256 transferAmount) public {
+      require(msg.sender == owner, "INVALID ACCESS");
+      require(recipient != address(0), "CANNOT TRANSFER TO ZERO ADDRESS");
+      require(transferAmount > 0, "TRANSFER AMOUNT 0");
+      IERC20(erc20).transfer(recipient, transferAmount);
+    }
+
     /* ========== EVENTS ========== */
 
     event RewardAdded(uint256 reward);
@@ -657,9 +654,6 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     event RewardPaid(address indexed user, uint256 reward);
 }
 
-interface IUniswapV2ERC20 {
-    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
-}
 
 contract StakingRewardsFactory is Ownable {
     // immutables
@@ -696,7 +690,7 @@ contract StakingRewardsFactory is Ownable {
         StakingRewardsInfo storage info = stakingRewardsInfoByStakingToken[stakingToken];
         require(info.stakingRewards == address(0), 'StakingRewardsFactory::deploy: already deployed');
 
-        info.stakingRewards = address(new StakingRewards(/*_rewardsDistribution=*/ address(this), rewardsToken, stakingToken, rewardsDuration));
+        info.stakingRewards = address(new StakingRewards(/*_rewardsDistribution=*/ address(this), rewardsToken, stakingToken, rewardsDuration, owner()));
         info.rewardAmount = rewardAmount;
         stakingTokens.push(stakingToken);
     }
@@ -733,6 +727,8 @@ contract StakingRewardsFactory is Ownable {
     }
 
     function sweep(address recipient, address erc20, uint256 transferAmount) public onlyOwner{
+      require(recipient != address(0), "CANNOT TRANSFER TO ZERO ADDRESS");
+      require(transferAmount > 0, "TRANSFER AMOUNT 0");
       IERC20(erc20).transfer(recipient, transferAmount);
     }
 }
