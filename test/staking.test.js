@@ -29,7 +29,7 @@ contract("StakingRewardsFactory", ([owner, alice, bob, random]) => {
   before(async function () {
     // Fix fork time
     const timestamp = Math.floor(Date.parse(new Date()) / 1000);
-    await time.increaseTo(timestamp);
+    await time.increaseTo(timestamp + time.duration.days(1));
 
     genesis = Number(await time.latest()) + 1000;
     etha = await RewardsToken.new();
