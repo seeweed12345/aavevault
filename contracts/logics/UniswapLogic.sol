@@ -31,6 +31,11 @@ contract UniswapLogic {
         0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
     );
 
+    // EVENTS
+    event LogSwap(address indexed src, address indexed dest, uint amount);
+    event LogLiquidityAdd(address indexed tokenA, address indexed tokenB, uint amountA, uint amountB);
+    event LogLiquidityRemove(address indexed tokenA, address indexed tokenB, uint amountA, uint amountB);
+
     function swapV1(
         IERC20 fromToken,
         IERC20 destToken,
@@ -64,6 +69,8 @@ contract UniswapLogic {
                 returnAmount = toExchange.ethToTokenSwapInput{value:returnAmount}(1, block.timestamp);
             }
         }
+
+        emit LogSwap(address(fromToken), address(destToken), amount);
     }
 
     function swapV2(
@@ -102,6 +109,8 @@ contract UniswapLogic {
         if (destToken.isETH()) {
             WETH.withdraw(WETH.balanceOf(address(this)));
         }
+
+        emit LogSwap(address(fromToken), address(destToken), realAmt);
     }
 
     function addLiquidity(
@@ -131,42 +140,53 @@ contract UniswapLogic {
 
         // Approve Router
         tokenAReal.universalApprove(address(UNI_ROUTER_V2), realAmtA);
-        tokenBReal.universalApprove(address(UNI_ROUTER_V2), realAmtB);
+        tokenBReal.universalApprove(address(UNI_ROUTER_V2), realAmtB);   
 
-        UNI_ROUTER_V2.addLiquidity(
-            address(tokenAReal),
-            address(tokenBReal),
-            realAmtA,
-            realAmtB,
-            1,
-            1,
-            address(this),
-            block.timestamp + 1
-        );
+        (uint256 amountA, uint256 amountB,) 
+            = UNI_ROUTER_V2.addLiquidity(
+                address(tokenAReal),
+                address(tokenBReal),
+                realAmtA,
+                realAmtB,
+                1,
+                1,
+                address(this),
+                block.timestamp + 1
+            );
+
+        emit LogLiquidityAdd(address(tokenAReal), address(tokenBReal), amountA, amountB);
     }
 
     function removeLiquidity(
         IERC20 tokenA,
         IERC20 tokenB,
-        IERC20 poolToken,
         uint256 amtPoolTokens
     ) external payable {
+
+        IERC20 tokenAReal = tokenA.isETH() ? WETH : tokenA;
+        IERC20 tokenBReal = tokenB.isETH() ? WETH : tokenB;
+
+        IUniswapV2Exchange poolToken = UNI_FACTORY_V2.getPair(tokenAReal, tokenBReal);
+
         uint256 realAmt = amtPoolTokens == uint256(-1)
-            ? poolToken.universalBalanceOf(address(this))
-            : amtPoolTokens;
+            ? IERC20(address(poolToken)).universalBalanceOf(address(this))
+            : amtPoolTokens;        
 
         // Approve Router
-        poolToken.universalApprove(address(UNI_ROUTER_V2), realAmt);
+        IERC20(address(poolToken)).universalApprove(address(UNI_ROUTER_V2), realAmt);
 
-        UNI_ROUTER_V2.removeLiquidity(
-            address(tokenA),
-            address(tokenB),
-            realAmt,
-            1,
-            1,
-            address(this),
-            block.timestamp + 1
-        );
+        (uint256 amountA, uint256 amountB) 
+            = UNI_ROUTER_V2.removeLiquidity(
+                address(tokenAReal),
+                address(tokenBReal),
+                realAmt,
+                1,
+                1,
+                address(this),
+                block.timestamp + 1
+            );
+
+        emit LogLiquidityRemove(address(tokenAReal), address(tokenBReal), amountA, amountB);
     }
     
     receive() external payable {}

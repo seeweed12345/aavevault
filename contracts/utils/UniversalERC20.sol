@@ -87,7 +87,7 @@ library UniversalERC20 {
                 return;
             }
 
-            uint256 allowance = token.allowance(address(this), to);
+            uint256 allowance = token.allowance(address(this), to);            
             if (allowance < amount) {
                 if (allowance > 0) {
                     token.safeApprove(to, 0);

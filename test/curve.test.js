@@ -1,5 +1,6 @@
 const EthaRegistryTruffle = artifacts.require("EthaRegistry");
 const SmartWallet = artifacts.require("SmartWallet");
+const IWallet = artifacts.require("IWallet");
 const CurveLogic = artifacts.require("CurveLogic");
 const IERC20 = artifacts.require(
   "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20"
@@ -7,6 +8,7 @@ const IERC20 = artifacts.require(
 
 const {
   expectRevert,
+  expectEvent,
   balance: ozBalance,
   constants: { MAX_UINT256 },
 } = require("@openzeppelin/test-helpers");
@@ -52,19 +54,14 @@ contract("Curve Logic", ([user, multisig]) => {
     registry = await EthaRegistryTruffle.at(proxy.address);
 
     await registry.enableLogicMultiple([curve.address]);
-  });
 
-  it("should deploy a smart wallet", async function () {
-    const tx = await registry.deployWallet({ from: user });
+    await registry.deployWallet({ from: user });
     const swAddress = await registry.wallets(user);
-    wallet = await SmartWallet.at(swAddress);
-    console.log("\tUSER SW:", swAddress);
-    console.log("\tGas Used:", tx.receipt.gasUsed);
+    wallet = await IWallet.at(swAddress);
+    await dai.transfer(wallet.address, toWei(100), { from: DAI_HOLDER });
   });
 
-  it("should swap DAI for USDC in curve", async function () {
-    await dai.transfer(wallet.address, toWei(100), { from: DAI_HOLDER });
-
+  it("should swap DAI for USDC in curve Synth Pool", async function () {
     const initial = await usdc.balanceOf(wallet.address);
 
     const data = web3.eth.abi.encodeFunctionCall(
@@ -94,9 +91,57 @@ contract("Curve Logic", ([user, multisig]) => {
       gas: web3.utils.toHex(5e6),
     });
 
+    expectEvent(tx, "LogSwap", {
+      src: DAI_ADDRESS,
+      dest: USDC_ADDRESS,
+      amount: toWei(100),
+    });
+
     console.log("\tGas Used:", tx.receipt.gasUsed);
 
     const balance = await usdc.balanceOf(wallet.address);
+    assert(balance > initial);
+  });
+
+  it("should swap USDC for DAI in curve Comp Pool", async function () {
+    const initial = await dai.balanceOf(wallet.address);
+
+    const data = web3.eth.abi.encodeFunctionCall(
+      {
+        name: "swapOnCurveCompound",
+        type: "function",
+        inputs: [
+          {
+            type: "address",
+            name: "src",
+          },
+          {
+            type: "address",
+            name: "dest",
+          },
+          {
+            type: "uint256",
+            name: "srcAmt",
+          },
+        ],
+      },
+      [USDC_ADDRESS, DAI_ADDRESS, String(50e6)]
+    );
+
+    const tx = await wallet.execute([curve.address], [data], false, {
+      from: user,
+      gas: web3.utils.toHex(5e6),
+    });
+
+    expectEvent(tx, "LogSwap", {
+      src: USDC_ADDRESS,
+      dest: DAI_ADDRESS,
+      amount: String(50e6),
+    });
+
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+
+    const balance = await dai.balanceOf(wallet.address);
     assert(balance > initial);
   });
 });

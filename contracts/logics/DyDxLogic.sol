@@ -220,18 +220,7 @@ contract DydxResolver is Helpers {
             require(msg.value == tokenAmt, "INVALID-ETH-SENT");
             ERC20Interface(getAddressWETH()).deposit{value:toPayback}();
             setApproval(getAddressWETH(), toPayback, getSoloAddress());
-
-            // Refund extra eth sent
-            if(tokenAmt > toPayback) msg.sender.transfer(sub(tokenAmt, toPayback));
         } else {
-            require(
-                ERC20Interface(erc20Addr).transferFrom(
-                    msg.sender,
-                    address(this),
-                    toPayback
-                ),
-                "Allowance or not enough bal"
-            );
             setApproval(erc20Addr, toPayback, getSoloAddress());
         }
         ISoloMargin(getSoloAddress()).operate(
@@ -249,8 +238,8 @@ contract DydxResolver is Helpers {
         address erc20Addr,
         uint256 tokenAmt
     ) external {
-        (uint256 toWithdraw, bool tokenSign) = getDydxBal(marketId);
-        require(tokenSign, "token not deposited");
+        (uint256 toWithdraw,) = getDydxBal(marketId);
+        require(toWithdraw > 0, "token not deposited");
 
         toWithdraw = toWithdraw > tokenAmt ? tokenAmt : toWithdraw;
         ISoloMargin solo = ISoloMargin(getSoloAddress());
@@ -289,23 +278,15 @@ contract DydxResolver is Helpers {
         address erc20Addr,
         uint256 tokenAmt
     ) external {
-        (, bool tokenSign) = getDydxBal(marketId);
-        require(!tokenSign, "token deposited");
+        (uint256 available, bool sign) = getDydxBal(marketId);
+        // user should use withdraw function when they have positive balance
+        require(available == 0 || !sign, "withdraw first"); 
 
         ISoloMargin(getSoloAddress()).operate(
             getAccountArgs(),
             getActionsArgs(marketId, tokenAmt, false)
         );
-        if (erc20Addr == getAddressETH()) {
-            setApproval(getAddressWETH(), tokenAmt, getAddressWETH());
-            ERC20Interface(getAddressWETH()).withdraw(tokenAmt);
-            msg.sender.transfer(tokenAmt);
-        } else {
-            require(
-                ERC20Interface(erc20Addr).transfer(msg.sender, tokenAmt),
-                "Allowance or not enough bal"
-            );
-        }
+
         emit LogBorrow(erc20Addr, tokenAmt);
     }
 }

@@ -21,6 +21,11 @@ contract BalancerLogic {
         0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
     );
 
+     // EVENTS
+    event LogSwap(address indexed src, address indexed dest, uint amount);
+    event LogLiquidityAdd(address indexed tokenA, address indexed tokenB, uint amountA, uint amountB);
+    event LogLiquidityRemove(address indexed tokenA, address indexed tokenB, uint amountA, uint amountB);
+
     /**
      * @dev unlimited approval
      */
@@ -78,6 +83,8 @@ contract BalancerLogic {
             // Withdraw WETH received only
             WETH.withdraw(WETH.balanceOf(address(this)).sub(initialBalance));
         }
+
+        emit LogSwap(address(fromToken), address(destToken), realAmount);
     }
 
     /**
@@ -101,6 +108,8 @@ contract BalancerLogic {
         );
 
         require(bptOut > 0, "Balancer: Failed Adding Liquidity");
+
+        emit LogLiquidityAdd(address(tokenIn), address(0), amountIn, 0);
     }
 
     /**
@@ -119,5 +128,7 @@ contract BalancerLogic {
             .exitswapPoolAmountIn(tokenOut, realAmountIn, 1);
 
         require(tokenAmtOut > 0, "Balancer: Failed Removing Liquidity");
+
+        emit LogLiquidityRemove(address(tokenOut), address(0), tokenAmtOut, 0);
     }
 }

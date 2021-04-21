@@ -1,3 +1,5 @@
+const SmartWallet = artifacts.require("SmartWallet");
+
 const { expectRevert } = require("@openzeppelin/test-helpers");
 
 const FEE = 1000;
@@ -6,8 +8,11 @@ contract("EthaRegistry", ([owner, alice, multisig, random]) => {
   let registry;
 
   before(async function () {
+    const impl = await SmartWallet.new();
+
     const EthaRegistry = await ethers.getContractFactory("EthaRegistry");
     registry = await upgrades.deployProxy(EthaRegistry, [
+      impl.address,
       multisig,
       multisig,
       FEE,
@@ -19,6 +24,14 @@ contract("EthaRegistry", ([owner, alice, multisig, random]) => {
       "0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d"
     );
     assert(notAllowed);
+  });
+
+  it("should not be able to call the foo function", async function () {
+    try {
+      await registry.foo();
+    } catch (error) {
+      assert.equal(error.message, "registry.foo is not a function");
+    }
   });
 
   it("should upgrade proxy contract", async function () {
@@ -36,6 +49,11 @@ contract("EthaRegistry", ([owner, alice, multisig, random]) => {
       "0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d" // aDAI
     );
     assert(notAllowed);
+  });
+
+  it("should not be able to call the foo function", async function () {
+    const res = await registry.foo();
+    assert.equal(res, "buzz");
   });
 
   it("should be able to register a logic contract", async function () {

@@ -1,5 +1,6 @@
 const EthaRegistryTruffle = artifacts.require("EthaRegistry");
 const SmartWallet = artifacts.require("SmartWallet");
+const IWallet = artifacts.require("IWallet");
 const TransferLogic = artifacts.require("TransferLogic");
 const UniswapLogic = artifacts.require("UniswapLogic");
 const InverseLogic = artifacts.require("InverseLogic");
@@ -13,6 +14,7 @@ const IERC20 = artifacts.require(
 );
 
 const {
+  expectEvent,
   time,
   constants: { MAX_UINT256 },
 } = require("@openzeppelin/test-helpers");
@@ -102,11 +104,11 @@ contract("yDAI Vault", () => {
     // Smart Wallet Creation
     await registry.deployWallet({ from: USER });
     const swAddress = await registry.wallets(USER);
-    wallet = await SmartWallet.at(swAddress);
+    wallet = await IWallet.at(swAddress);
 
     await registry.deployWallet({ from: USER2 });
     const swAddress2 = await registry.wallets(USER2);
-    wallet2 = await SmartWallet.at(swAddress2);
+    wallet2 = await IWallet.at(swAddress2);
 
     // Deposit DAI
     await dai.transfer(swAddress, toWei(200), { from: USER });
@@ -177,6 +179,11 @@ contract("yDAI Vault", () => {
       gas: web3.utils.toHex(5e6),
     });
 
+    expectEvent(tx, "VaultDeposit", {
+      erc20: DAI_ADDRESS,
+      tokenAmt: toWei(50),
+    });
+
     console.log("\tGas Used:", tx.receipt.gasUsed);
 
     const vaultTokenBalance = await vault.balanceOf(wallet.address);
@@ -241,66 +248,15 @@ contract("yDAI Vault", () => {
       }
     );
 
+    expectEvent(tx, "VaultDeposit", {
+      erc20: DAI_ADDRESS,
+      tokenAmt: toWei(50),
+    });
+
     console.log("\tGas Used:", tx.receipt.gasUsed);
 
     const vaultTokenBalance = await vault.balanceOf(wallet.address);
     assert(fromWei(vaultTokenBalance) > 0);
-  });
-
-  it("Should deposit DAI to vault using waiting functionality", async function () {
-    const data = web3.eth.abi.encodeFunctionCall(
-      {
-        name: "depositAndWait",
-        type: "function",
-        inputs: [
-          {
-            type: "address",
-            name: "erc20",
-          },
-          {
-            type: "uint256",
-            name: "tokenAmt",
-          },
-          {
-            type: "address",
-            name: "vault",
-          },
-        ],
-      },
-      [DAI_ADDRESS, String(50e18), vault.address]
-    );
-
-    let tx = await wallet.execute([inverse.address], [data], false, {
-      from: USER,
-      gas: web3.utils.toHex(5e6),
-    });
-
-    console.log("\tGas Used:", tx.receipt.gasUsed);
-
-    tx = await wallet2.execute([inverse.address], [data], false, {
-      from: USER2,
-      gas: web3.utils.toHex(5e6),
-    });
-
-    console.log("\tGas Used:", tx.receipt.gasUsed);
-  });
-
-  it("Should mint pending vault tokens (waiting)", async function () {
-    const initialBalance = await vault.balanceOf(wallet.address);
-    const initialBalance2 = await vault.balanceOf(wallet2.address);
-
-    const tx = await vault.mintPending({
-      from: USER2,
-      gas: web3.utils.toHex(5e6),
-    });
-
-    console.log("\tGas Used:", tx.receipt.gasUsed);
-
-    const finalBalance = await vault.balanceOf(wallet.address);
-    const finalBalance2 = await vault.balanceOf(wallet2.address);
-
-    assert(fromWei(finalBalance) > fromWei(initialBalance));
-    assert(fromWei(finalBalance2) > fromWei(initialBalance2));
   });
 
   it("Should withdraw DAI from vault", async function () {
@@ -329,6 +285,11 @@ contract("yDAI Vault", () => {
       gas: web3.utils.toHex(5e6),
     });
 
+    expectEvent(tx, "VaultWithdraw", {
+      erc20: DAI_ADDRESS,
+      tokenAmt: toWei(50),
+    });
+
     console.log("\tGas Used:", tx.receipt.gasUsed);
 
     const endDaiBalance = await dai.balanceOf(wallet.address);
@@ -336,9 +297,6 @@ contract("yDAI Vault", () => {
       new BN(endDaiBalance).sub(new BN(startDaiBalance)),
       String(50e18)
     );
-
-    // const vaultTokenBalance = await vault.balanceOf(wallet.address);
-    // console.log(String(50e18));
   });
 
   it("Should harvest profits for yDAI vault", async function () {
@@ -386,7 +344,7 @@ contract("yDAI Vault", () => {
 
     await harvester.harvestVault(
       vault.address,
-      toWei(0.01),
+      toWei(0.0001),
       1,
       [DAI_ADDRESS, WETH_ADDRESS],
       now + 1
@@ -414,6 +372,10 @@ contract("yDAI Vault", () => {
     const tx = await wallet.execute([inverse.address], [data], false, {
       from: USER,
       gas: web3.utils.toHex(5e6),
+    });
+
+    expectEvent(tx, "VaultClaim", {
+      erc20: WETH_ADDRESS,
     });
 
     console.log("\tGas Used:", tx.receipt.gasUsed);

@@ -89,11 +89,6 @@ contract UserAuth is RegistryHelper {
  */
 contract SmartWallet is UserAuth {
     using SafeMath for uint256;
-    
-    event LogMint(address indexed erc20, uint256 tokenAmt);
-    event LogRedeem(address indexed erc20, uint256 tokenAmt);
-    event LogBorrow(address indexed erc20, uint256 tokenAmt);
-    event LogPayback(address indexed erc20, uint256 tokenAmt);
 
     IGasToken chi;
 

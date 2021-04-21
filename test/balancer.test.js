@@ -1,5 +1,6 @@
 const EthaRegistryTruffle = artifacts.require("EthaRegistry");
 const SmartWallet = artifacts.require("SmartWallet");
+const IWallet = artifacts.require("IWallet");
 const BalancerLogic = artifacts.require("BalancerLogic");
 const IERC20 = artifacts.require(
   "@openzeppelin/contracts/token/ERC20/IERC20.sol:IERC20"
@@ -7,6 +8,7 @@ const IERC20 = artifacts.require(
 
 const {
   expectRevert,
+  expectEvent,
   balance: ozBalance,
   constants: { MAX_UINT256 },
 } = require("@openzeppelin/test-helpers");
@@ -53,7 +55,7 @@ contract("Balancer Logic", ([user, multisig]) => {
   it("should deploy a smart wallet", async function () {
     const tx = await registry.deployWallet({ from: user });
     const swAddress = await registry.wallets(user);
-    wallet = await SmartWallet.at(swAddress);
+    wallet = await IWallet.at(swAddress);
     console.log("\tUSER SW:", swAddress);
     console.log("\tGas Used:", tx.receipt.gasUsed);
   });
@@ -93,6 +95,12 @@ contract("Balancer Logic", ([user, multisig]) => {
       gas: web3.utils.toHex(5e6),
     });
 
+    expectEvent(tx, "LogSwap", {
+      src: ETH_ADDRESS,
+      dest: DAI_ADDRESS,
+      amount: toWei(1),
+    });
+
     console.log("\tGas Used:", tx.receipt.gasUsed);
 
     const balance = await dai.balanceOf(wallet.address);
@@ -125,6 +133,11 @@ contract("Balancer Logic", ([user, multisig]) => {
     const tx = await wallet.execute([balancer.address], [data], false, {
       from: user,
       gas: web3.utils.toHex(5e6),
+    });
+
+    expectEvent(tx, "LogLiquidityAdd", {
+      tokenA: DAI_ADDRESS,
+      amountA: toWei(1000),
     });
 
     console.log("\tGas Used:", tx.receipt.gasUsed);
@@ -161,6 +174,10 @@ contract("Balancer Logic", ([user, multisig]) => {
     const tx = await wallet.execute([balancer.address], [data], false, {
       from: user,
       gas: web3.utils.toHex(5e6),
+    });
+
+    expectEvent(tx, "LogLiquidityRemove", {
+      tokenA: WETH_ADDRESS,
     });
 
     console.log("\tGas Used:", tx.receipt.gasUsed);
