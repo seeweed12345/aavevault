@@ -39,6 +39,8 @@ const UNI_ADDRESS = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
 
 const YETH_ADDRESS = "0xa9fE4601811213c340e850ea305481afF02f5b28";
 
+const WETH_HOLDER = "0x4a18a50a8328b42773268B4b436254056b7d70CE";
+
 // HELPERS
 const toWei = (value) => web3.utils.toWei(String(value));
 const fromWei = (value) => Number(web3.utils.fromWei(String(value)));
@@ -57,6 +59,23 @@ contract("yETH Vault", ([multisig, alice]) => {
     uni;
 
   before(async function () {
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [
+        {
+          forking: {
+            jsonRpcUrl: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+            blockNumber: 12280000,
+          },
+        },
+      ],
+    });
+
+    await hre.network.provider.request({
+      method: "hardhat_impersonateAccount",
+      params: [WETH_HOLDER],
+    });
+
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [YEARN_STRATEGIST],
@@ -125,7 +144,7 @@ contract("yETH Vault", ([multisig, alice]) => {
     assert.equal(await vault.paused(), false);
   });
 
-  it("Should deposit WETH to vault", async function () {
+  it("Should deposit to vault starting with ETH", async function () {
     await strat.totalYearnDeposits();
 
     const data1 = web3.eth.abi.encodeFunctionCall(
@@ -181,7 +200,47 @@ contract("yETH Vault", ([multisig, alice]) => {
     assert.equal(vaultTokenBalance, toWei(10));
   });
 
+  it("Should deposit WETH to vault", async function () {
+    await strat.totalYearnDeposits();
+
+    await weth.transfer(wallet.address, toWei(5), { from: WETH_HOLDER });
+
+    const data = web3.eth.abi.encodeFunctionCall(
+      {
+        name: "deposit",
+        type: "function",
+        inputs: [
+          {
+            type: "address",
+            name: "erc20",
+          },
+          {
+            type: "uint256",
+            name: "tokenAmt",
+          },
+          {
+            type: "address",
+            name: "vault",
+          },
+        ],
+      },
+      [WETH_ADDRESS, toWei(5), vault.address]
+    );
+
+    const tx = await wallet.execute([inverse.address], [data], false, {
+      from: alice,
+      gas: web3.utils.toHex(5e6),
+    });
+
+    console.log("\tGas Used:", tx.receipt.gasUsed);
+
+    const vaultTokenBalance = await vault.balanceOf(wallet.address);
+    assert.equal(vaultTokenBalance, toWei(15));
+  });
+
   it("Should withdraw WETH from vault", async function () {
+    await time.advanceBlock();
+
     const startWETHBalance = await weth.balanceOf(wallet.address);
 
     const data = web3.eth.abi.encodeFunctionCall(

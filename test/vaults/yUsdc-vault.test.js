@@ -47,6 +47,18 @@ contract("yUSDC Vault", ([multisig, alice]) => {
   let registry, wallet, transfers, strat, uniswap, vault, inverse, usdc, yUsdc;
 
   before(async function () {
+    await network.provider.request({
+      method: "hardhat_reset",
+      params: [
+        {
+          forking: {
+            jsonRpcUrl: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+            blockNumber: 12284000,
+          },
+        },
+      ],
+    });
+
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [YEARN_STRATEGIST],
