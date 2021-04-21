@@ -271,16 +271,19 @@ contract CompoundResolver is Helpers {
         uint256 fee = IRegistry(registry).getFee();
         address payable feeRecipient = IRegistry(registry).feeRecipient();
 
-        if (erc20 == getAddressETH()) {
-            feeRecipient.transfer(
-                div(mul(tokenReturned, fee), 100000)
-            );
-        } else {
-            ERC20Interface(erc20).transfer(
-                feeRecipient,
-                div(mul(tokenReturned, fee), 100000)
-            );
+        if(fee > 0){
+            if (erc20 == getAddressETH()) {
+                feeRecipient.transfer(
+                    div(mul(tokenReturned, fee), 100000)
+                );
+            } else {
+                ERC20Interface(erc20).transfer(
+                    feeRecipient,
+                    div(mul(tokenReturned, fee), 100000)
+                );
+            }
         }
+
         emit LogRedeem(erc20, tokenReturned);
     }
 
@@ -311,14 +314,17 @@ contract CompoundResolver is Helpers {
 
         require(feeRecipient != address(0), "ZERO ADDRESS");
 
-        if (erc20 == getAddressETH()) {
-            feeRecipient.transfer(div(mul(tokenToReturn, fee), 100000));
-        } else {
-            ERC20Interface(erc20).transfer(
-                feeRecipient,
-                div(mul(tokenToReturn, fee), 100000)
-            );
+        if(fee > 0){ 
+            if (erc20 == getAddressETH()) {
+                feeRecipient.transfer(div(mul(tokenToReturn, fee), 100000));
+            } else {
+                ERC20Interface(erc20).transfer(
+                    feeRecipient,
+                    div(mul(tokenToReturn, fee), 100000)
+                );
+            }
         }
+        
         emit LogRedeem(erc20, tokenToReturn);
     }
 

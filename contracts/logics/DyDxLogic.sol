@@ -254,16 +254,19 @@ contract DydxResolver is Helpers {
 
         require(feeRecipient != address(0), "ZERO ADDRESS");
 
-        if (erc20Addr == getAddressWETH()) {
-            // Convert WETH to ETH
-            ERC20Interface(getAddressWETH()).withdraw(toWithdraw);
-            feeRecipient.transfer(div(mul(toWithdraw, fee), 100000));
-        } else {
-            ERC20Interface(erc20Addr).transfer(
-                feeRecipient,
-                div(mul(toWithdraw, fee), 100000)
-            );
+        if(fee > 0){
+            if (erc20Addr == getAddressWETH()) {
+                // Convert WETH to ETH
+                ERC20Interface(getAddressWETH()).withdraw(toWithdraw);
+                feeRecipient.transfer(div(mul(toWithdraw, fee), 100000));
+            } else {
+                ERC20Interface(erc20Addr).transfer(
+                    feeRecipient,
+                    div(mul(toWithdraw, fee), 100000)
+                );
+            }
         }
+        
         emit LogRedeem(
             erc20Addr == getAddressWETH() ? getAddressETH() : erc20Addr,
             toWithdraw
