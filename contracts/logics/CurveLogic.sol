@@ -62,6 +62,8 @@ interface IERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
 }
 
+import "hardhat/console.sol";
+
 contract CurveLogic {
     // CURVE REGISTRY
     ICurveRegistry internal constant CURVE_REGISTRY = ICurveRegistry(
@@ -86,6 +88,9 @@ contract CurveLogic {
     ICurve internal constant CURVE_PAX = ICurve(
         0x06364f10B501e868329afBc005b3492902d6C763
     );
+
+    // EVENTS
+    event LogSwap(address indexed src, address indexed dest, uint amount);
 
     // TOKENS
     address constant DAI_ADDRESS = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
@@ -142,8 +147,8 @@ contract CurveLogic {
         int128 j;
 
         for(int128 x = 1; x <= 2; x++){
-            if(CURVE_COMPOUND.underlying_coins(x) == src) i = x;
-            if(CURVE_COMPOUND.underlying_coins(x) == dest) j = x;
+            if(CURVE_COMPOUND.underlying_coins(x-1) == src) i = x;
+            if(CURVE_COMPOUND.underlying_coins(x-1) == dest) j = x;
         }
 
         if (i == 0 || j == 0) {
@@ -153,6 +158,8 @@ contract CurveLogic {
         setApproval(src, srcAmt, address(CURVE_COMPOUND));
 
         CURVE_COMPOUND.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+
+        emit LogSwap(src, dest, srcAmt);
     }
 
     function swapOnCurveUSDT(
@@ -164,8 +171,8 @@ contract CurveLogic {
         int128 j;
 
         for(int128 x = 1; x <= 3; x++){
-            if(CURVE_USDT.underlying_coins(x) == src) i = x;
-            if(CURVE_USDT.underlying_coins(x) == dest) j = x;
+            if(CURVE_USDT.underlying_coins(x-1) == src) i = x;
+            if(CURVE_USDT.underlying_coins(x-1) == dest) j = x;
         }
         
         if (i == 0 || j == 0) {
@@ -175,6 +182,8 @@ contract CurveLogic {
         setApproval(src, srcAmt, address(CURVE_USDT));
 
         CURVE_USDT.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+
+        emit LogSwap(src, dest, srcAmt);
     }
 
     function swapOnCurveY(
@@ -186,8 +195,8 @@ contract CurveLogic {
         int128 j;
 
         for(int128 x = 1; x <= 4; x++){
-            if(CURVE_Y.underlying_coins(x) == src) i = x;
-            if(CURVE_Y.underlying_coins(x) == dest) j = x;
+            if(CURVE_Y.underlying_coins(x-1) == src) i = x;
+            if(CURVE_Y.underlying_coins(x-1) == dest) j = x;
         }
         
         if (i == 0 || j == 0) {
@@ -197,6 +206,8 @@ contract CurveLogic {
         setApproval(src, srcAmt, address(CURVE_Y));
 
         CURVE_Y.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+
+        emit LogSwap(src, dest, srcAmt);
     }
 
     function swapOnCurveB(
@@ -208,8 +219,8 @@ contract CurveLogic {
         int128 j;
 
         for(int128 x = 1; x <= 4; x++){
-            if(CURVE_B.underlying_coins(x) == src) i = x;
-            if(CURVE_B.underlying_coins(x) == dest) j = x;
+            if(CURVE_B.underlying_coins(x-1) == src) i = x;
+            if(CURVE_B.underlying_coins(x-1) == dest) j = x;
         }
         
         if (i == 0 || j == 0) {
@@ -219,6 +230,8 @@ contract CurveLogic {
         setApproval(src, srcAmt, address(CURVE_B));
 
         CURVE_B.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+
+        emit LogSwap(src, dest, srcAmt);
     }
 
     function swapOnCurveSynth(
@@ -230,8 +243,8 @@ contract CurveLogic {
         int128 j;
 
         for(int128 x = 1; x <= 4; x++){
-            if(CURVE_S.underlying_coins(x) == src) i = x;
-            if(CURVE_S.underlying_coins(x) == dest) j = x;
+            if(CURVE_S.underlying_coins(x-1) == src) i = x;
+            if(CURVE_S.underlying_coins(x-1) == dest) j = x;
         }
         
         if (i == 0 || j == 0) {
@@ -241,6 +254,8 @@ contract CurveLogic {
         setApproval(src, srcAmt, address(CURVE_S));
 
         CURVE_S.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+
+        emit LogSwap(src, dest, srcAmt);
     }
 
     function swapOnCurvePAX(
@@ -252,8 +267,8 @@ contract CurveLogic {
         int128 j;
 
         for(int128 x = 1; x <= 4; x++){
-            if(CURVE_PAX.underlying_coins(x) == src) i = x;
-            if(CURVE_PAX.underlying_coins(x) == dest) j = x;
+            if(CURVE_PAX.underlying_coins(x-1) == src) i = x;
+            if(CURVE_PAX.underlying_coins(x-1) == dest) j = x;
         }
         
         if (i == 0 || j == 0) {
@@ -263,6 +278,8 @@ contract CurveLogic {
         setApproval(src, srcAmt, address(CURVE_PAX));
 
         CURVE_PAX.exchange_underlying(i - 1, j - 1, srcAmt, 0);
+
+        emit LogSwap(src, dest, srcAmt);
     }
 
     // TODO: Generic Function to Swap on any Pool

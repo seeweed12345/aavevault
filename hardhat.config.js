@@ -12,10 +12,11 @@ require("hardhat-gas-reporter");
 module.exports = {
   networks: {
     hardhat: {
-      // forking: {
-      //   url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-      //   blockNumber: 11765131,
-      // },
+      forking: {
+        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+        blockNumber: 12206400,
+        gasPrice: 110e9,
+      },
     },
     local: {
       url: "http://localhost:8545",
@@ -33,6 +34,12 @@ module.exports = {
       gasPrice: 10e9,
       gas: 6e6,
     },
+    fork: {
+      url: process.env.FORK_URL,
+      gasPrice: 100e9,
+      gas: 5e6,
+      timeout: 300000, // 5 min
+    },
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API,
@@ -41,7 +48,7 @@ module.exports = {
   },
   gasReporter: {
     currency: "USD",
-    gasPrice: 80,
+    gasPrice: 100,
     // showTimeSpent: true,
     enabled: process.env.REPORT_GAS ? true : false,
     coinmarketcap: process.env.CMC_API_KEY,

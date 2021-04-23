@@ -7,6 +7,8 @@ import "./DividendToken.sol";
 import "../libs/Timelock.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "hardhat/console.sol";
+import "../interfaces/IDistribution.sol";
 
 contract Vault is Ownable, Pausable, DividendToken {
     using SafeMath for uint256;
@@ -21,16 +23,15 @@ contract Vault is Ownable, Pausable, DividendToken {
     uint public performanceFee = 0; // 0% of profit
     // if depositLimit = 0 then there is no deposit limit
     uint public depositLimit;
-    uint public lastDistribution;    
-    uint256 public pendingTotal = 0;
-    mapping(address => uint256) public pending;
-    address[] public addressesPendingForMinting;
+    uint public lastDistribution;
+    address public distribution;
 
     // EVENTS
     event HarvesterChanged(address newHarvester);
     event FeeUpdate(uint256 newFee);
     event StrategyChanged(address newStrat);
     event DepositLimitUpdated(uint newLimit);
+    event NewDistribution(address newDistribution);
 
     modifier onlyHarvester {
         require(msg.sender == harvester);
@@ -51,6 +52,11 @@ contract Vault is Ownable, Pausable, DividendToken {
         return strat.calcTotalValue();
     }
 
+    function updateDistribution(address newDistribution) public onlyOwner {
+        distribution = newDistribution;
+        emit NewDistribution(newDistribution);
+    }
+
     function deposit(uint amount) external whenNotPaused {
         require(amount > 0, "ZERO-AMOUNT");
         if(depositLimit > 0) { // if deposit limit is 0, then there is no deposit limit
@@ -59,45 +65,20 @@ contract Vault is Ownable, Pausable, DividendToken {
         underlying.safeTransferFrom(msg.sender, address(strat), amount);
         strat.invest();
         _mint(msg.sender, amount);
+        if(distribution != address(0)){
+          IDistribution(distribution).stake(msg.sender, amount);
+        }
     }
 
-    function depositAndWait(uint amount) external whenNotPaused {
-        require(amount > 0, "ZERO-AMOUNT");
-        if(depositLimit > 0) { // if deposit limit is 0, then there is no deposit limit
-            require(totalSupply().add(amount) <= depositLimit);
-        }
-        underlying.safeTransferFrom(msg.sender, address(this), amount);
-        pendingTotal = pendingTotal.add(amount);
-        pending[msg.sender] = (pending[msg.sender]).add(amount);
-        addressesPendingForMinting.push(msg.sender);
-    }
 
     function withdraw(uint amount) external {
         require(amount > 0, "ZERO-AMOUNT");
         _burn(msg.sender, amount);
         strat.divest(amount);
         underlying.safeTransfer(msg.sender, amount);
-    }
-
-    function withdrawPending(uint amount) external {
-        require(amount > 0, "ZERO-AMOUNT");
-        require(amount >= pending[msg.sender], 'Withdrawal Amount Greater Than Deposited');
-        pendingTotal = pendingTotal.sub(amount);
-        pending[msg.sender] = (pending[msg.sender]).sub(amount);
-        underlying.safeTransfer(msg.sender, amount);
-    }
-
-    function mintPending() external{
-      underlying.safeTransfer(address(strat), pendingTotal);
-      strat.invest();
-      pendingTotal = 0;
-      for(uint256 i = 0; i< addressesPendingForMinting.length; i++){
-        if(pending[addressesPendingForMinting[i]] > 0){
-            _mint(addressesPendingForMinting[i], pending[addressesPendingForMinting[i]]);
-            pending[addressesPendingForMinting[i]] = 0;
+        if(distribution != address(0)){
+          IDistribution(distribution).withdraw(msg.sender, amount);
         }
-      }
-      delete addressesPendingForMinting;
     }
 
     function underlyingYield() public returns (uint) {
@@ -110,6 +91,10 @@ contract Vault is Ownable, Pausable, DividendToken {
 
     function claim() external {
         withdrawDividend(msg.sender);
+        if(distribution != address(0)){
+          IDistribution(distribution).getReward(msg.sender);
+        }
+
     }
 
     // Used to claim on behalf of certain contracts e.g. Uniswap pool
@@ -141,6 +126,7 @@ contract Vault is Ownable, Pausable, DividendToken {
     // Users must watch the timelock contract on Etherscan for any transactions
     function setStrat(IStrat strat_, bool force) external {
         if(address(strat) != address(0)) {
+            console.log("Setting strat");
             require(msg.sender == address(timelock));
             uint prevTotalValue = strat.calcTotalValue();
             strat.divest(prevTotalValue);

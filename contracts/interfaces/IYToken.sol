@@ -10,7 +10,7 @@ interface IYToken {
     //function withdraw(uint shares, address recipient) external returns (uint); // not used
     function withdraw(uint shares) external returns (uint);
     function withdraw() external returns (uint);
-    function token() external returns (address);
+    function token() external view returns (address);
     function totalAssets() external view returns (uint);
     function totalSupply() external view returns (uint);
     function availableDepositLimit() external view returns (uint);

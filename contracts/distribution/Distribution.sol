@@ -484,13 +484,13 @@ interface IStakingRewards {
 
     // Mutative
 
-    function stake(uint256 amount) external;
+    function stake(address user, uint256 amount) external;
 
-    function withdraw(uint256 amount) external;
+    function withdraw(address user, uint256 amount) external;
 
-    function getReward() external;
+    function getReward(address user) external;
 
-    function exit() external;
+    // function exit(address user) external;
 }
 
 contract RewardsDistributionRecipient {
@@ -504,42 +504,37 @@ contract RewardsDistributionRecipient {
     }
 }
 
-contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, ReentrancyGuard {
+contract DistributionRewards is IStakingRewards, RewardsDistributionRecipient, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     /* ========== STATE VARIABLES ========== */
 
     IERC20 public rewardsToken;
-    IERC20 public stakingToken;
     uint256 public periodFinish = 0;
     uint256 public rewardRate = 0;
     uint256 public rewardsDuration;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
-    address public owner;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
 
     uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
-
+    address public vault;
     /* ========== CONSTRUCTOR ========== */
 
     constructor(
         address _rewardsDistribution,
         address _rewardsToken,
-        address _stakingToken,
         uint256 _rewardsDuration,
-        address _owner
-
+        address _vault
     ) public {
         rewardsToken = IERC20(_rewardsToken);
-        stakingToken = IERC20(_stakingToken);
         rewardsDistribution = _rewardsDistribution;
         rewardsDuration = _rewardsDuration;
-        owner = _owner;
+        vault = _vault;
     }
 
     /* ========== VIEWS ========== */
@@ -574,34 +569,31 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         return rewardRate.mul(rewardsDuration);
     }
 
-    function stake(uint256 amount) external nonReentrant updateReward(msg.sender) {
+    function stake(address user, uint256 amount) external onlyVault nonReentrant updateReward(user) {
         require(amount > 0, "Cannot stake 0");
         _totalSupply = _totalSupply.add(amount);
-        _balances[msg.sender] = _balances[msg.sender].add(amount);
-        stakingToken.safeTransferFrom(msg.sender, address(this), amount);
-        emit Staked(msg.sender, amount);
+        _balances[user] = _balances[user].add(amount);
+        emit Staked(user, amount);
     }
 
-    function withdraw(uint256 amount) public nonReentrant updateReward(msg.sender) {
+    function withdraw(address user, uint256 amount) public onlyVault nonReentrant updateReward(user) {
         require(amount > 0, "Cannot withdraw 0");
         _totalSupply = _totalSupply.sub(amount);
-        _balances[msg.sender] = _balances[msg.sender].sub(amount);
-        stakingToken.safeTransfer(msg.sender, amount);
-        emit Withdrawn(msg.sender, amount);
+        _balances[user] = _balances[user].sub(amount);
+        emit Withdrawn(user, amount);
     }
 
-    function getReward() public nonReentrant updateReward(msg.sender) {
-        uint256 reward = rewards[msg.sender];
+    function getReward(address user) public nonReentrant updateReward(user) {
+        uint256 reward = rewards[user];
         if (reward > 0) {
-            rewards[msg.sender] = 0;
-            rewardsToken.safeTransfer(msg.sender, reward);
-            emit RewardPaid(msg.sender, reward);
+            rewards[user] = 0;
+            rewardsToken.safeTransfer(user, reward);
+            emit RewardPaid(user, reward);
         }
     }
 
-    function exit() external {
-        withdraw(_balances[msg.sender]);
-        getReward();
+    function withdrawTokens(address erc20, address recipient, uint256 amount) public onlyOwner{
+      require(IERC20(erc20).transfer(recipient, amount), "Error while transferring tokens");
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
@@ -639,11 +631,9 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
         _;
     }
 
-    function sweep(address recipient, address erc20, uint256 transferAmount) public {
-      require(msg.sender == owner, "INVALID ACCESS");
-      require(recipient != address(0), "CANNOT TRANSFER TO ZERO ADDRESS");
-      require(transferAmount > 0, "TRANSFER AMOUNT 0");
-      IERC20(erc20).transfer(recipient, transferAmount);
+    modifier onlyVault() {
+        require(msg.sender == vault, "Invalid Access: Can only be accessed by ETHA Vaults");
+        _;
     }
 
     /* ========== EVENTS ========== */
@@ -652,83 +642,4 @@ contract StakingRewards is IStakingRewards, RewardsDistributionRecipient, Reentr
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
-}
-
-
-contract StakingRewardsFactory is Ownable {
-    // immutables
-    address public rewardsToken;
-    uint public stakingRewardsGenesis;
-
-    // the staking tokens for which the rewards contract has been deployed
-    address[] public stakingTokens;
-
-    // info about rewards for a particular staking token
-    struct StakingRewardsInfo {
-        address stakingRewards;
-        uint rewardAmount;
-    }
-
-    // rewards info by staking token
-    mapping(address => StakingRewardsInfo) public stakingRewardsInfoByStakingToken;
-
-    constructor(
-        address _rewardsToken,
-        uint _stakingRewardsGenesis
-    ) Ownable() public {
-        require(_stakingRewardsGenesis >= block.timestamp, 'StakingRewardsFactory::constructor: genesis too soon');
-
-        rewardsToken = _rewardsToken;
-        stakingRewardsGenesis = _stakingRewardsGenesis;
-    }
-
-    ///// permissioned functions
-
-    // deploy a staking reward contract for the staking token, and store the reward amount
-    // the reward will be distributed to the staking reward contract no sooner than the genesis
-    function deploy(address stakingToken, uint rewardAmount, uint256 rewardsDuration) public onlyOwner {
-        StakingRewardsInfo storage info = stakingRewardsInfoByStakingToken[stakingToken];
-        require(info.stakingRewards == address(0), 'StakingRewardsFactory::deploy: already deployed');
-
-        info.stakingRewards = address(new StakingRewards(/*_rewardsDistribution=*/ address(this), rewardsToken, stakingToken, rewardsDuration, owner()));
-        info.rewardAmount = rewardAmount;
-        stakingTokens.push(stakingToken);
-    }
-
-    ///// permissionless functions
-
-    // call notifyRewardAmount for all staking tokens.
-    function notifyRewardAmounts() public {
-        require(stakingTokens.length > 0, 'StakingRewardsFactory::notifyRewardAmounts: called before any deploys');
-        for (uint i = 0; i < stakingTokens.length; i++) {
-            notifyRewardAmount(stakingTokens[i]);
-        }
-    }
-
-    // notify reward amount for an individual staking token.
-    // this is a fallback in case the notifyRewardAmounts costs too much gas to call for all contracts
-    function notifyRewardAmount(address stakingToken) public {
-        require(block.timestamp >= stakingRewardsGenesis, 'StakingRewardsFactory::notifyRewardAmount: not ready');
-
-        StakingRewardsInfo storage info = stakingRewardsInfoByStakingToken[stakingToken];
-        require(info.stakingRewards != address(0), 'StakingRewardsFactory::notifyRewardAmount: not deployed');
-
-        if (info.rewardAmount > 0) {
-            uint rewardAmount = info.rewardAmount;
-            info.rewardAmount = 0;
-
-            require(
-                IERC20(rewardsToken).transfer(info.stakingRewards, rewardAmount),
-                'StakingRewardsFactory::notifyRewardAmount: transfer failed'
-            );
-
-            StakingRewards(info.stakingRewards).notifyRewardAmount(rewardAmount);
-        }
-    }
-
-    function sweep(address recipient, address erc20, uint256 transferAmount) public onlyOwner{
-      require(recipient != address(0), "CANNOT TRANSFER TO ZERO ADDRESS");
-      require(transferAmount > 0, "TRANSFER AMOUNT 0");
-      IERC20(erc20).transfer(recipient, transferAmount);
-    }
 }

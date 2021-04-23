@@ -170,10 +170,10 @@ contract Helpers is DSMath {
 }
 
 contract DydxResolver is Helpers {
-    event LogMint(address indexed erc20Addr, uint256 tokenAmt, address owner);
-    event LogRedeem(address indexed erc20Addr, uint256 tokenAmt, address owner);
-    event LogBorrow(address indexed erc20Addr, uint256 tokenAmt, address owner);
-    event LogPayback(address indexed erc20Addr, uint256 tokenAmt, address owner);
+    event LogMint(address indexed erc20, uint256 tokenAmt);
+    event LogRedeem(address indexed erc20, uint256 tokenAmt);
+    event LogBorrow(address indexed erc20, uint256 tokenAmt);
+    event LogPayback(address indexed erc20, uint256 tokenAmt);
 
     /**
      * @dev Deposit ETH/ERC20
@@ -200,7 +200,7 @@ contract DydxResolver is Helpers {
             getAccountArgs(),
             getActionsArgs(marketId, toDeposit, true)
         );
-        emit LogMint(erc20Addr, toDeposit, address(this));
+        emit LogMint(erc20Addr, toDeposit);
     }
 
     /**
@@ -220,25 +220,14 @@ contract DydxResolver is Helpers {
             require(msg.value == tokenAmt, "INVALID-ETH-SENT");
             ERC20Interface(getAddressWETH()).deposit{value:toPayback}();
             setApproval(getAddressWETH(), toPayback, getSoloAddress());
-
-            // Refund extra eth sent
-            if(tokenAmt > toPayback) msg.sender.transfer(sub(tokenAmt, toPayback));
         } else {
-            require(
-                ERC20Interface(erc20Addr).transferFrom(
-                    msg.sender,
-                    address(this),
-                    toPayback
-                ),
-                "Allowance or not enough bal"
-            );
             setApproval(erc20Addr, toPayback, getSoloAddress());
         }
         ISoloMargin(getSoloAddress()).operate(
             getAccountArgs(),
             getActionsArgs(marketId, toPayback, true)
         );
-        emit LogPayback(erc20Addr, toPayback, address(this));
+        emit LogPayback(erc20Addr, toPayback);
     }
 
     /**
@@ -249,8 +238,8 @@ contract DydxResolver is Helpers {
         address erc20Addr,
         uint256 tokenAmt
     ) external {
-        (uint256 toWithdraw, bool tokenSign) = getDydxBal(marketId);
-        require(tokenSign, "token not deposited");
+        (uint256 toWithdraw,) = getDydxBal(marketId);
+        require(toWithdraw > 0, "token not deposited");
 
         toWithdraw = toWithdraw > tokenAmt ? tokenAmt : toWithdraw;
         ISoloMargin solo = ISoloMargin(getSoloAddress());
@@ -265,20 +254,22 @@ contract DydxResolver is Helpers {
 
         require(feeRecipient != address(0), "ZERO ADDRESS");
 
-        if (erc20Addr == getAddressWETH()) {
-            // Convert WETH to ETH
-            ERC20Interface(getAddressWETH()).withdraw(toWithdraw);
-            feeRecipient.transfer(div(mul(toWithdraw, fee), 100000));
-        } else {
-            ERC20Interface(erc20Addr).transfer(
-                feeRecipient,
-                div(mul(toWithdraw, fee), 100000)
-            );
+        if(fee > 0){
+            if (erc20Addr == getAddressWETH()) {
+                // Convert WETH to ETH
+                ERC20Interface(getAddressWETH()).withdraw(toWithdraw);
+                feeRecipient.transfer(div(mul(toWithdraw, fee), 100000));
+            } else {
+                ERC20Interface(erc20Addr).transfer(
+                    feeRecipient,
+                    div(mul(toWithdraw, fee), 100000)
+                );
+            }
         }
+        
         emit LogRedeem(
             erc20Addr == getAddressWETH() ? getAddressETH() : erc20Addr,
-            toWithdraw,
-            address(this)
+            toWithdraw
         );
     }
 
@@ -290,24 +281,16 @@ contract DydxResolver is Helpers {
         address erc20Addr,
         uint256 tokenAmt
     ) external {
-        (, bool tokenSign) = getDydxBal(marketId);
-        require(!tokenSign, "token deposited");
+        (uint256 available, bool sign) = getDydxBal(marketId);
+        // user should use withdraw function when they have positive balance
+        require(available == 0 || !sign, "withdraw first"); 
 
         ISoloMargin(getSoloAddress()).operate(
             getAccountArgs(),
             getActionsArgs(marketId, tokenAmt, false)
         );
-        if (erc20Addr == getAddressETH()) {
-            setApproval(getAddressWETH(), tokenAmt, getAddressWETH());
-            ERC20Interface(getAddressWETH()).withdraw(tokenAmt);
-            msg.sender.transfer(tokenAmt);
-        } else {
-            require(
-                ERC20Interface(erc20Addr).transfer(msg.sender, tokenAmt),
-                "Allowance or not enough bal"
-            );
-        }
-        emit LogBorrow(erc20Addr, tokenAmt, address(this));
+
+        emit LogBorrow(erc20Addr, tokenAmt);
     }
 }
 

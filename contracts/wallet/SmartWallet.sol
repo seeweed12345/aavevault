@@ -89,11 +89,6 @@ contract UserAuth is RegistryHelper {
  */
 contract SmartWallet is UserAuth {
     using SafeMath for uint256;
-    
-    event LogMint(address indexed erc20, uint256 tokenAmt, address owner);
-    event LogRedeem(address indexed erc20, uint256 tokenAmt, address owner);
-    event LogDeposit(address indexed erc20, uint256 tokenAmt);
-    event LogWithdraw(address indexed erc20, uint256 tokenAmt);
 
     IGasToken chi;
 
@@ -105,6 +100,7 @@ contract SmartWallet is UserAuth {
         require(_user != address(0), "ZERO ADDRESS");
         registry = _registry;
         owner = _user;
+        isDelegate[_user] = true;
         chi = IGasToken(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
     }
 
@@ -239,8 +235,39 @@ contract SmartWallet is UserAuth {
     }
 
 
-    /**
-        @dev allow ether deposits
-     */
+    /// @dev accept ERC721 token transfers
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) public virtual returns (bytes4) {
+        return bytes4(keccak256("onERC721Received(address,address,uint256,bytes)"));
+    }
+
+    /// @dev accept ERC1155 token transfers
+    function onERC1155Received(
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes memory
+    ) public virtual returns (bytes4) {
+        return bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"));
+    }
+
+    /// @dev accept ERC1155 token batch transfers
+    function onERC1155BatchReceived(
+        address,
+        address,
+        uint256[] memory,
+        uint256[] memory,
+        bytes memory
+    ) public virtual returns (bytes4) {
+        return
+            bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"));
+    }
+
+    /// @dev accept ETH deposits
     receive() external payable {}
 }

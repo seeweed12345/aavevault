@@ -1,6 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.7.0;
 
+import "../interfaces/IWETH.sol";
+
 interface AaveLendingPoolInterface {
     function deposit(
         address reserve,
@@ -78,6 +80,36 @@ interface AaveLendingPoolInterface {
     ) external;
 }
 
+interface AaveLendingPoolInterfaceV2 {
+    function deposit(
+        address asset,
+        uint256 amount,
+        address onBehalfOf,
+        uint16 referralCode
+    ) external;
+
+    function withdraw(
+        address asset,
+        uint256 amount,
+        address to
+    ) external returns (uint256);
+
+    function borrow(
+        address asset,
+        uint256 amount,
+        uint256 interestRateMode,
+        uint16 referralCode,
+        address onBehalfOf
+    ) external;
+
+    function repay(
+        address asset,
+        uint256 amount,
+        uint256 rateMode,
+        address onBehalfOf
+    ) external returns (uint256);
+}
+
 interface ATokenInterface {
     function redeem(uint256 amount) external;
 
@@ -98,6 +130,8 @@ interface ATokenInterface {
         returns (bool);
 
     function underlyingAssetAddress() external pure returns (address);
+
+    function UNDERLYING_ASSET_ADDRESS() external pure returns (address);
 }
 
 interface LendingPoolAddressProviderInterface {
@@ -187,6 +221,22 @@ contract Helpers is DSMath {
         return adr.getLendingPool();
     }
 
+    /**
+     * @dev get Aave Lending Pool Address V2
+     */
+    function getLendingPoolAddressV2()
+        public
+        view
+        returns (address lendingPoolAddress)
+    {
+
+            LendingPoolAddressProviderInterface adr
+         = LendingPoolAddressProviderInterface(
+            0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5
+        ); //Mainnet
+        return adr.getLendingPool();
+    }
+
     function getLendingPoolCoreAddress()
         public
         view
@@ -198,6 +248,14 @@ contract Helpers is DSMath {
             0x24a42fD28C976A61Df5D00D0599C34c4f90748c8
         ); //Mainnet
         return adr.getLendingPoolCore();
+    }
+
+    function getWethAddress() public pure returns(address){
+        return 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    }
+
+    function getReferralCode() public pure returns(uint16){
+        return uint16(0);
     }
 
     /**
@@ -213,6 +271,13 @@ contract Helpers is DSMath {
                 erc20Contract.transfer(msg.sender, srcBal);
             }
         }
+    }
+
+    function enableCollateral(address reserve) external{
+        AaveLendingPoolInterface _lendingPool = AaveLendingPoolInterface(
+            getLendingPoolAddress()
+        );
+        _lendingPool.setUserUseReserveAsCollateral(reserve, true);
     }
 
     /**
@@ -232,15 +297,17 @@ contract Helpers is DSMath {
 }
 
 contract AaveResolver is Helpers {
-    event LogMint(address erc20, uint256 tokenAmt, address owner);
-    event LogRedeem(address erc20, uint256 tokenAmt, address owner);
+    event LogMint(address indexed erc20, uint256 tokenAmt);
+    event LogRedeem(address indexed erc20, uint256 tokenAmt);
+    event LogBorrow(address indexed erc20, uint256 tokenAmt);
+    event LogPayback(address indexed erc20, uint256 tokenAmt);
 
     /**
      * @dev Deposit ETH/ERC20 and mint Aave Tokens
      */
     function mintAToken(address erc20, uint256 tokenAmt) external payable {
         require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
-        if (erc20 == getAddressETH()) {
+        if (erc20 == getAddressETH()) {            
             require(tokenAmt <= address(this).balance, "notEnoughEthereum");
             AaveLendingPoolInterface aToken = AaveLendingPoolInterface(
                 getLendingPoolAddress()
@@ -258,7 +325,29 @@ contract AaveResolver is Helpers {
             setApproval(erc20, tokenAmt, getLendingPoolCoreAddress());
             aToken.deposit(erc20, tokenAmt, 0);
         }
-        emit LogMint(erc20, tokenAmt, address(this));
+        emit LogMint(erc20, tokenAmt);
+    }
+
+    /**
+     * @dev Deposit ETH/ERC20 and mint Aave V2 Tokens 
+     */
+    function mintATokenV2(address erc20, uint256 tokenAmt) external payable {
+        require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
+        address realToken = erc20;
+        if (erc20 == getAddressETH()) {
+            IWETH(getWethAddress()).deposit{value:tokenAmt}();
+            realToken = getWethAddress();
+        }
+        require(
+            tokenAmt <= ERC20Interface(realToken).balanceOf(address(this)),
+            "amountToBeDeposited-greaterThanAvailableBalance"
+        );
+        AaveLendingPoolInterfaceV2 _lendingPool = AaveLendingPoolInterfaceV2(
+            getLendingPoolAddressV2()
+        );
+        setApproval(realToken, tokenAmt, getLendingPoolAddressV2());
+        _lendingPool.deposit(realToken, tokenAmt,  address(this), getReferralCode());
+        emit LogMint(erc20, tokenAmt);
     }
 
     /**
@@ -267,9 +356,8 @@ contract AaveResolver is Helpers {
      */
     function redeemAToken(address aErc20, uint256 aTokenAmt) external {
         require(aTokenAmt > 0, "amount-shoul-be-greaterThan-zero");
-        ERC20Interface token = ERC20Interface(aErc20);
         require(
-            aTokenAmt <= token.balanceOf(address(this)),
+            aTokenAmt <= ERC20Interface(aErc20).balanceOf(address(this)),
             "amountToBeRedeemed-greaterThanAvailableBalance"
         );
         ATokenInterface aToken = ATokenInterface(aErc20);
@@ -282,15 +370,131 @@ contract AaveResolver is Helpers {
 
         require(feeRecipient != address(0), "ZERO ADDRESS");
 
-        if (tokenAddress == getAddressETH()) {
-            feeRecipient.transfer(div(mul(aTokenAmt, fee), 100000));
-        } else {
-            ERC20Interface(tokenAddress).transfer(
-                feeRecipient,
-                div(mul(aTokenAmt, fee), 100000)
-            );
+        if(fee > 0){
+            if (tokenAddress == getAddressETH()) {
+                feeRecipient.transfer(div(mul(aTokenAmt, fee), 100000));
+            } else {
+                ERC20Interface(tokenAddress).transfer(
+                    feeRecipient,
+                    div(mul(aTokenAmt, fee), 100000)
+                );
+            }
         }
-        emit LogRedeem(tokenAddress, aTokenAmt, address(this));
+        
+        emit LogRedeem(tokenAddress, aTokenAmt);
+    }
+
+    /**
+     * @dev Redeem ETH/ERC20 and burn Aave V2 Tokens
+     * @param aTokenAmt Amount of AToken To burn
+     */
+    function redeemATokenV2(address aErc20, uint256 aTokenAmt) external {
+        require(aTokenAmt > 0, "amount-shoul-be-greaterThan-zero");
+        require(
+            aTokenAmt <= ERC20Interface(aErc20).balanceOf(address(this)),
+            "amountToBeRedeemed-greaterThanAvailableBalance"
+        );
+
+        ATokenInterface aToken = ATokenInterface(aErc20);
+        address tokenAddress = aToken.UNDERLYING_ASSET_ADDRESS();
+
+        AaveLendingPoolInterfaceV2 _lendingPool = AaveLendingPoolInterfaceV2(
+            getLendingPoolAddressV2()
+        );
+        _lendingPool.withdraw(tokenAddress, aTokenAmt, address(this));
+
+        address registry = ISmartWallet(address(this)).registry();
+        uint256 fee = IRegistry(registry).getFee();
+        address payable feeRecipient = IRegistry(registry).feeRecipient();
+
+        require(feeRecipient != address(0), "ZERO ADDRESS");
+
+        if(fee > 0){
+            if (tokenAddress == getAddressETH()) {
+                feeRecipient.transfer(div(mul(aTokenAmt, fee), 100000));
+            } else {
+                ERC20Interface(tokenAddress).transfer(
+                    feeRecipient,
+                    div(mul(aTokenAmt, fee), 100000)
+                );
+            }
+        }
+        
+        emit LogRedeem(tokenAddress, aTokenAmt);
+    }
+
+    /**
+     * @dev Redeem ETH/ERC20 and burn Aave Tokens
+     * @param tokenAmt Amount of underlying tokens to borrow
+     */
+    function borrow(address erc20, uint tokenAmt) external payable {        
+        AaveLendingPoolInterface _lendingPool = AaveLendingPoolInterface(
+            getLendingPoolAddress()
+        );
+        // address realToken = erc20 == getAddressETH() ? getWethAddress() : erc20;
+
+        _lendingPool.borrow(erc20, tokenAmt, 2, getReferralCode());
+
+        emit LogBorrow(erc20, tokenAmt);
+    }
+
+    /**
+     * @dev Redeem ETH/ERC20 and burn Aave Tokens
+     * @param tokenAmt Amount of underlying tokens to borrow
+     */
+    function borrowV2(address erc20, uint tokenAmt) external payable {        
+        AaveLendingPoolInterfaceV2 _lendingPool = AaveLendingPoolInterfaceV2(
+            getLendingPoolAddressV2()
+        );
+        address realToken = erc20 == getAddressETH() ? getWethAddress() : erc20;
+        _lendingPool.borrow(realToken, tokenAmt, 2, getReferralCode(), address(this));
+
+        emit LogBorrow(erc20, tokenAmt);
+    }
+
+    /**
+     * @dev Redeem ETH/ERC20 and burn Aave Tokens
+     * @param tokenAmt Amount of underlying tokens to borrow
+     */
+    function repay(address erc20, uint tokenAmt) external payable {        
+        AaveLendingPoolInterface _lendingPool = AaveLendingPoolInterface(
+            getLendingPoolAddress()
+        );
+
+        uint ethAmt = 0;
+
+        if (erc20 == getAddressETH()) {
+            ethAmt = tokenAmt;
+        } else {
+            setApproval(erc20, tokenAmt, getLendingPoolCoreAddress());
+        }
+
+        _lendingPool.repay{value:ethAmt}(erc20, tokenAmt, payable(address(this)));
+
+        emit LogPayback(erc20, tokenAmt);
+    }
+
+    /**
+     * @dev Redeem ETH/ERC20 and burn Aave Tokens
+     * @param tokenAmt Amount of underlying tokens to borrow
+     */
+    function repayV2(address erc20, uint tokenAmt) external payable {        
+        AaveLendingPoolInterfaceV2 _lendingPool = AaveLendingPoolInterfaceV2(
+            getLendingPoolAddressV2()
+        );
+
+        address realToken = erc20;
+
+        if (erc20 == getAddressETH()) {
+            IWETH(getWethAddress()).deposit{value:tokenAmt}();
+            realToken = getWethAddress();
+        }
+
+        setApproval(erc20, tokenAmt, getLendingPoolAddressV2());
+
+        _lendingPool.repay(realToken, tokenAmt, 2, address(this));
+
+        emit LogPayback(erc20, tokenAmt);
     }
 }
 

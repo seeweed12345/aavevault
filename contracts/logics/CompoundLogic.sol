@@ -1,6 +1,8 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.7.0;
 
+import "hardhat/console.sol";
+
 interface CTokenInterface {
     function redeem(uint256 redeemTokens) external returns (uint256);
 
@@ -208,20 +210,10 @@ contract Helpers is DSMath {
 }
 
 contract CompoundResolver is Helpers {
-    event LogMint(address indexed erc20, uint256 tokenAmt, address owner);
-    event LogRedeem(address indexed erc20, uint256 tokenAmt, address owner);
-    event LogBorrow(
-        address indexed erc20,
-        address indexed cErc20,
-        uint256 tokenAmt,
-        address owner
-    );
-    event LogRepay(
-        address indexed erc20,
-        address indexed cErc20,
-        uint256 tokenAmt,
-        address owner
-    );
+    event LogMint(address indexed erc20, uint256 tokenAmt);
+    event LogRedeem(address indexed erc20, uint256 tokenAmt);
+    event LogBorrow(address indexed erc20, uint256 tokenAmt);
+    event LogPayback(address indexed erc20, uint256 tokenAmt);
     event LogRepayBehalf(
         address indexed borrower,
         address indexed erc20,
@@ -258,14 +250,14 @@ contract CompoundResolver is Helpers {
             setApproval(erc20, toDeposit, cErc20);
             assert(cToken.mint(toDeposit) == 0); // no error message on assert
         }
-        emit LogMint(erc20, toDeposit, address(this));
+        emit LogMint(erc20, toDeposit);
     }
 
     function redeemCToken(
         address erc20,
         address cErc20,
         uint256 cTokenAmt
-    ) external {
+    ) external payable{
         CTokenInterface cToken = CTokenInterface(cErc20);
         uint256 toBurn = cToken.balanceOf(address(this));
         if (toBurn > cTokenAmt) {
@@ -279,17 +271,20 @@ contract CompoundResolver is Helpers {
         uint256 fee = IRegistry(registry).getFee();
         address payable feeRecipient = IRegistry(registry).feeRecipient();
 
-        if (erc20 == getAddressETH()) {
-            feeRecipient.transfer(
-                div(mul(tokenReturned, fee), 100000)
-            );
-        } else {
-            ERC20Interface(erc20).transfer(
-                feeRecipient,
-                div(mul(tokenReturned, fee), 100000)
-            );
+        if(fee > 0){
+            if (erc20 == getAddressETH()) {
+                feeRecipient.transfer(
+                    div(mul(tokenReturned, fee), 100000)
+                );
+            } else {
+                ERC20Interface(erc20).transfer(
+                    feeRecipient,
+                    div(mul(tokenReturned, fee), 100000)
+                );
+            }
         }
-        emit LogRedeem(erc20, tokenReturned, address(this));
+
+        emit LogRedeem(erc20, tokenReturned);
     }
 
     /**
@@ -300,7 +295,7 @@ contract CompoundResolver is Helpers {
         address erc20,
         address cErc20,
         uint256 tokenAmt
-    ) external {
+    ) external payable{
         CTokenInterface cToken = CTokenInterface(cErc20);
         setApproval(cErc20, 10**50, cErc20);
         uint256 toBurn = cToken.balanceOf(address(this));
@@ -319,15 +314,18 @@ contract CompoundResolver is Helpers {
 
         require(feeRecipient != address(0), "ZERO ADDRESS");
 
-        if (erc20 == getAddressETH()) {
-            feeRecipient.transfer(div(mul(tokenToReturn, fee), 100000));
-        } else {
-            ERC20Interface(erc20).transfer(
-                feeRecipient,
-                div(mul(tokenToReturn, fee), 100000)
-            );
+        if(fee > 0){ 
+            if (erc20 == getAddressETH()) {
+                feeRecipient.transfer(div(mul(tokenToReturn, fee), 100000));
+            } else {
+                ERC20Interface(erc20).transfer(
+                    feeRecipient,
+                    div(mul(tokenToReturn, fee), 100000)
+                );
+            }
         }
-        emit LogRedeem(erc20, tokenToReturn, address(this));
+        
+        emit LogRedeem(erc20, tokenToReturn);
     }
 
     /**
@@ -337,13 +335,13 @@ contract CompoundResolver is Helpers {
         address erc20,
         address cErc20,
         uint256 tokenAmt
-    ) external {
+    ) external payable{
         enterMarket(cErc20);
         require(
             CTokenInterface(cErc20).borrow(tokenAmt) == 0,
             "got collateral?"
         );
-        emit LogBorrow(erc20, cErc20, tokenAmt, address(this));
+        emit LogBorrow(erc20, tokenAmt);
     }
 
     /**
@@ -360,14 +358,13 @@ contract CompoundResolver is Helpers {
             uint256 borrows = cToken.borrowBalanceCurrent(address(this));
             if (toRepay > borrows) {
                 toRepay = borrows;
-                msg.sender.transfer(sub(msg.value, toRepay));
             }
             cToken.repayBorrow{value:toRepay}();
-            emit LogRepay(erc20, cErc20, toRepay, address(this));
+            emit LogPayback(erc20, toRepay);
         } else {
             CERC20Interface cToken = CERC20Interface(cErc20);
             ERC20Interface token = ERC20Interface(erc20);
-            uint256 toRepay = token.balanceOf(msg.sender);
+            uint256 toRepay = token.balanceOf(address(this));
             uint256 borrows = cToken.borrowBalanceCurrent(address(this));
             if (toRepay > tokenAmt) {
                 toRepay = tokenAmt;
@@ -376,9 +373,8 @@ contract CompoundResolver is Helpers {
                 toRepay = borrows;
             }
             setApproval(erc20, toRepay, cErc20);
-            token.transferFrom(msg.sender, address(this), toRepay);
             require(cToken.repayBorrow(toRepay) == 0, "transfer approved?");
-            emit LogRepay(erc20, cErc20, toRepay, address(this));
+            emit LogPayback(erc20, toRepay);
         }
     }
 

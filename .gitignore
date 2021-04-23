@@ -3,6 +3,9 @@ build/
 artifacts/
 cache/
 package-lock.json
+scripts/vesting/data.js
+Addresses.txt
+
 .env
 .vscode
 .openzeppelin
