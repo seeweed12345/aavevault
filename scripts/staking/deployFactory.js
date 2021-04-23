@@ -47,17 +47,6 @@ async function main() {
 
   fs.writeFileSync("deployments.json", JSON.stringify(deployments));
 
-<<<<<<< HEAD
-  const factory = await StakingRewardsFactory.new(etha, genesis);
-  console.log("Factory Deployed:", factory.address);
-  await factory.deploy(ETHA_ETH_UNI_LP, rewardAmount, rewardsDuration);
-  console.log('deployed staking contract for ETHA_ETH_UNI_LP');
-  await factory.deploy(ETHA_USDC_BALANCER_LP, rewardAmount, rewardsDuration);
-  console.log('deployed staking contract for ETHA_USDC_BALANCER_LP');
-  await factory.deploy(ETHA_USDC_UNI_LP, rewardAmount, rewardsDuration);
-  console.log('deployed staking contract for ETHA_USDC_UNI_LP');
-=======
->>>>>>> d52cdc8c629f7dfccf5ed30d13b7a0b66ba1af67
   console.log("\nDone!");
 }
 
