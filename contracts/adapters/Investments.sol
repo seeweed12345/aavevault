@@ -100,8 +100,7 @@ contract Investments is Ownable{
         view
         returns (uint256)
     {
-        CTokenInterface cToken = CTokenInterface(getCToken(token));
-        (, uint256 balance, , uint256 rate) = cToken.getAccountSnapshot(user);
+        (, uint256 balance, , uint256 rate) = CTokenInterface(getCToken(token)).getAccountSnapshot(user);
 
         return balance.mul(rate).div(1 ether);
     }

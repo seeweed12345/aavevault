@@ -36,6 +36,7 @@
     "new-vault": "hardhat run scripts/vaults/newVault.js --network fork",
     "complete": "yarn protocol && yarn vaults && yarn staking",
     "factory": "hardhat run scripts/vesting/deployFactory.js --network local",
+    "adapters": "hardhat run scripts/adapters/index.js --network live",
     "vest": "hardhat run scripts/vesting/vest.js --network local",
     "flatten-sm": "truffle-flattener contracts/SmartWallet.sol > flats/SmartWallet.sol",
     "flatten-re": "truffle-flattener contracts/EthaRegistry.sol > flats/EthaRegistry.sol"
