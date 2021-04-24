@@ -1,3 +1,4 @@
+//SPDX-License-Identifier: Unlicense
 pragma solidity ^0.7.0;
 pragma experimental ABIEncoderV2;
 
@@ -16,11 +17,13 @@ contract ProtocolsData {
     using SafeMath for uint256;
 
     address internal constant ETH = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    address internal constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address internal constant SAI = 0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359;
     address internal constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address internal constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
 
     mapping(address => address) internal cTokens;
+    mapping(address => uint256) internal dydxMarkets;
 
     IAaveAddressProvider aaveProvider = IAaveAddressProvider(
         0x24a42fD28C976A61Df5D00D0599C34c4f90748c8
@@ -55,6 +58,11 @@ contract ProtocolsData {
         cTokens[0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48] = 0x39AA39c021dfbaE8faC545936693aC917d5E7563;
         cTokens[0xE41d2489571d322189246DaFA5ebDe1F4699F498] = 0xB3319f5D18Bc0D84dD1b4825Dcde5d5f7266d407;
         cTokens[0xdAC17F958D2ee523a2206206994597C13D831ec7] = 0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9;
+
+        dydxMarkets[ETH] = 1;
+        dydxMarkets[WETH] = 1;
+        dydxMarkets[USDC] = 3;
+        dydxMarkets[DAI] = 4;    
     }
 
     function getCToken(address token) public view returns (address) {
