@@ -32,6 +32,7 @@
     "dist-init": "hardhat run scripts/vaults/initializeDist.js --network fork",
     "init-all": "yarn staking-init && yarn dist-init",
     "protocol": "hardhat run scripts/deploy.js --network fork",
+    "new-logic": "hardhat run scripts/newLogic.js --network live",
     "vaults": "hardhat run scripts/vaults/deploy.js --network fork",
     "new-vault": "hardhat run scripts/vaults/newVault.js --network fork",
     "complete": "yarn protocol && yarn vaults && yarn staking",

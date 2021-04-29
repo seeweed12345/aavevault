@@ -24,7 +24,6 @@ module.exports = {
     live: {
       url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
       accounts: [process.env.MAINNET_PRIVKEY],
-      gasPrice: 55e9,
       timeout: 300000, // 5 min
     },
     rinkeby: {
