@@ -35,6 +35,7 @@
     "new-logic": "hardhat run scripts/newLogic.js --network live",
     "vaults": "hardhat run scripts/vaults/deploy.js --network fork",
     "new-vault": "hardhat run scripts/vaults/newVault.js --network fork",
+    "harvest": "hardhat run scripts/vaults/harvest.js --network live",
     "complete": "yarn protocol && yarn vaults && yarn staking",
     "factory": "hardhat run scripts/vesting/deployFactory.js --network local",
     "adapters": "hardhat run scripts/adapters/index.js --network live",
