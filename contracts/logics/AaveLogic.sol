@@ -3,6 +3,16 @@ pragma solidity ^0.7.0;
 
 import "../interfaces/IWETH.sol";
 
+interface IDistribution {
+    function stake(uint256 redeemTokens) external;
+
+    function withdraw(uint256 redeemAmount) external;
+
+    function getReward(address user) external;
+
+    function balanceOf(address account) external view returns (uint256);
+}
+
 interface AaveLendingPoolInterface {
     function deposit(
         address reserve,
@@ -164,6 +174,8 @@ interface IRegistry {
     function getFee() external pure returns (uint256);
 
     function feeRecipient() external pure returns (address payable);
+
+    function distributionContract(address token) external view returns (address);
 }
 
 contract DSMath {
@@ -307,7 +319,7 @@ contract AaveResolver is Helpers {
      */
     function mintAToken(address erc20, uint256 tokenAmt) external payable {
         require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
-        if (erc20 == getAddressETH()) {            
+        if (erc20 == getAddressETH()) {
             require(tokenAmt <= address(this).balance, "notEnoughEthereum");
             AaveLendingPoolInterface aToken = AaveLendingPoolInterface(
                 getLendingPoolAddress()
@@ -325,11 +337,15 @@ contract AaveResolver is Helpers {
             setApproval(erc20, tokenAmt, getLendingPoolCoreAddress());
             aToken.deposit(erc20, tokenAmt, 0);
         }
+        address distribution = IRegistry(ISmartWallet(address(this)).registry()).distributionContract(erc20);
+        if(distribution != address(0)){
+          IDistribution(distribution).stake(tokenAmt);
+        }
         emit LogMint(erc20, tokenAmt);
     }
 
     /**
-     * @dev Deposit ETH/ERC20 and mint Aave V2 Tokens 
+     * @dev Deposit ETH/ERC20 and mint Aave V2 Tokens
      */
     function mintATokenV2(address erc20, uint256 tokenAmt) external payable {
         require(tokenAmt > 0, "amount-shoul-be-greaterThan-zero");
@@ -347,6 +363,11 @@ contract AaveResolver is Helpers {
         );
         setApproval(realToken, tokenAmt, getLendingPoolAddressV2());
         _lendingPool.deposit(realToken, tokenAmt,  address(this), getReferralCode());
+
+        address distribution = IRegistry(ISmartWallet(address(this)).registry()).distributionContract(erc20);
+        if(distribution != address(0)){
+          IDistribution(distribution).stake(tokenAmt);
+        }
         emit LogMint(erc20, tokenAmt);
     }
 
@@ -380,8 +401,15 @@ contract AaveResolver is Helpers {
                 );
             }
         }
-        
         emit LogRedeem(tokenAddress, aTokenAmt);
+        address distribution = IRegistry(registry).distributionContract(tokenAddress);
+        uint256 maxWithdrawalAmount = IDistribution(distribution).balanceOf(address(this));
+        if (aTokenAmt > maxWithdrawalAmount) {
+            aTokenAmt = maxWithdrawalAmount;
+        }
+        if(distribution != address(0)){
+          IDistribution(distribution).withdraw(aTokenAmt);
+        }
     }
 
     /**
@@ -419,15 +447,23 @@ contract AaveResolver is Helpers {
                 );
             }
         }
-        
+
         emit LogRedeem(tokenAddress, aTokenAmt);
+        address distribution = IRegistry(registry).distributionContract(tokenAddress);
+        uint256 maxWithdrawalAmount = IDistribution(distribution).balanceOf(address(this));
+        if (aTokenAmt > maxWithdrawalAmount) {
+            aTokenAmt = maxWithdrawalAmount;
+        }
+        if(distribution != address(0)){
+          IDistribution(distribution).withdraw(aTokenAmt);
+        }
     }
 
     /**
      * @dev Redeem ETH/ERC20 and burn Aave Tokens
      * @param tokenAmt Amount of underlying tokens to borrow
      */
-    function borrow(address erc20, uint tokenAmt) external payable {        
+    function borrow(address erc20, uint tokenAmt) external payable {
         AaveLendingPoolInterface _lendingPool = AaveLendingPoolInterface(
             getLendingPoolAddress()
         );
@@ -442,7 +478,7 @@ contract AaveResolver is Helpers {
      * @dev Redeem ETH/ERC20 and burn Aave Tokens
      * @param tokenAmt Amount of underlying tokens to borrow
      */
-    function borrowV2(address erc20, uint tokenAmt) external payable {        
+    function borrowV2(address erc20, uint tokenAmt) external payable {
         AaveLendingPoolInterfaceV2 _lendingPool = AaveLendingPoolInterfaceV2(
             getLendingPoolAddressV2()
         );
@@ -456,7 +492,7 @@ contract AaveResolver is Helpers {
      * @dev Redeem ETH/ERC20 and burn Aave Tokens
      * @param tokenAmt Amount of underlying tokens to borrow
      */
-    function repay(address erc20, uint tokenAmt) external payable {        
+    function repay(address erc20, uint tokenAmt) external payable {
         AaveLendingPoolInterface _lendingPool = AaveLendingPoolInterface(
             getLendingPoolAddress()
         );
@@ -478,7 +514,7 @@ contract AaveResolver is Helpers {
      * @dev Redeem ETH/ERC20 and burn Aave Tokens
      * @param tokenAmt Amount of underlying tokens to borrow
      */
-    function repayV2(address erc20, uint tokenAmt) external payable {        
+    function repayV2(address erc20, uint tokenAmt) external payable {
         AaveLendingPoolInterfaceV2 _lendingPool = AaveLendingPoolInterfaceV2(
             getLendingPoolAddressV2()
         );

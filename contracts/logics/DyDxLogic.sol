@@ -4,6 +4,18 @@ pragma experimental ABIEncoderV2;
 
 import "../interfaces/ISoloMargin.sol";
 
+interface IDistribution {
+    function stake(uint256 redeemTokens) external;
+
+    function withdraw(uint256 redeemAmount) external;
+
+    function getReward(address user) external;
+
+    function balanceOf(address account) external view returns (uint256);
+
+    function distributionContract(address token) external view returns (address);
+}
+
 interface ERC20Interface {
     function allowance(address, address) external view returns (uint256);
 
@@ -32,6 +44,8 @@ interface IRegistry {
     function getFee() external pure returns (uint256);
 
     function feeRecipient() external pure returns (address payable);
+
+    function distributionContract(address token) external view returns (address);
 }
 
 contract DSMath {
@@ -200,6 +214,10 @@ contract DydxResolver is Helpers {
             getAccountArgs(),
             getActionsArgs(marketId, toDeposit, true)
         );
+        address distribution = IRegistry(ISmartWallet(address(this)).registry()).distributionContract(erc20Addr);
+        if(distribution != address(0)){
+          IDistribution(distribution).stake(toDeposit);
+        }
         emit LogMint(erc20Addr, toDeposit);
     }
 
@@ -266,11 +284,18 @@ contract DydxResolver is Helpers {
                 );
             }
         }
-        
         emit LogRedeem(
             erc20Addr == getAddressWETH() ? getAddressETH() : erc20Addr,
             toWithdraw
         );
+        address distribution = IRegistry(registry).distributionContract(erc20Addr);
+        if(distribution != address(0)){
+          uint256 maxWithdrawalAmount = IDistribution(distribution).balanceOf(address(this));
+          if (toWithdraw > maxWithdrawalAmount) {
+              toWithdraw = maxWithdrawalAmount;
+          }
+          IDistribution(distribution).withdraw(toWithdraw);
+        }
     }
 
     /**
@@ -283,7 +308,7 @@ contract DydxResolver is Helpers {
     ) external {
         (uint256 available, bool sign) = getDydxBal(marketId);
         // user should use withdraw function when they have positive balance
-        require(available == 0 || !sign, "withdraw first"); 
+        require(available == 0 || !sign, "withdraw first");
 
         ISoloMargin(getSoloAddress()).operate(
             getAccountArgs(),

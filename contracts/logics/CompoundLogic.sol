@@ -3,6 +3,16 @@ pragma solidity ^0.7.0;
 
 import "hardhat/console.sol";
 
+interface IDistribution {
+    function stake(uint256 redeemTokens) external;
+
+    function withdraw(uint256 redeemAmount) external;
+
+    function getReward(address user) external;
+
+    function balanceOf(address account) external view returns (uint256);
+}
+
 interface CTokenInterface {
     function redeem(uint256 redeemTokens) external returns (uint256);
 
@@ -121,6 +131,9 @@ interface IRegistry {
     function getFee() external pure returns (uint256);
 
     function feeRecipient() external pure returns (address payable);
+
+    function distributionContract(address token) external view returns (address);
+
 }
 
 contract DSMath {
@@ -250,6 +263,10 @@ contract CompoundResolver is Helpers {
             setApproval(erc20, toDeposit, cErc20);
             assert(cToken.mint(toDeposit) == 0); // no error message on assert
         }
+        address distribution = IRegistry(ISmartWallet(address(this)).registry()).distributionContract(erc20);
+        if(distribution != address(0)){
+          IDistribution(distribution).stake(toDeposit);
+        }
         emit LogMint(erc20, toDeposit);
     }
 
@@ -283,8 +300,16 @@ contract CompoundResolver is Helpers {
                 );
             }
         }
-
         emit LogRedeem(erc20, tokenReturned);
+
+        address distribution = IRegistry(registry).distributionContract(erc20);
+        if(distribution != address(0)){
+          uint256 maxWithdrawalAmount = IDistribution(distribution).balanceOf(address(this));
+          if (tokenReturned > maxWithdrawalAmount) {
+              tokenReturned = maxWithdrawalAmount;
+          }
+          IDistribution(distribution).withdraw(tokenReturned);
+        }
     }
 
     /**
@@ -314,7 +339,7 @@ contract CompoundResolver is Helpers {
 
         require(feeRecipient != address(0), "ZERO ADDRESS");
 
-        if(fee > 0){ 
+        if(fee > 0){
             if (erc20 == getAddressETH()) {
                 feeRecipient.transfer(div(mul(tokenToReturn, fee), 100000));
             } else {
@@ -324,8 +349,15 @@ contract CompoundResolver is Helpers {
                 );
             }
         }
-        
         emit LogRedeem(erc20, tokenToReturn);
+        address distribution = IRegistry(registry).distributionContract(erc20);
+        if(distribution != address(0)){
+          uint256 maxWithdrawalAmount = IDistribution(distribution).balanceOf(address(this));
+          if (tokenToReturn > maxWithdrawalAmount) {
+              tokenToReturn = maxWithdrawalAmount;
+          }
+          IDistribution(distribution).withdraw(tokenToReturn);
+        }
     }
 
     /**

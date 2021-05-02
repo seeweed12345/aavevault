@@ -16,6 +16,7 @@
     "test-aave": "hardhat test ./test/aave.test.js",
     "test-vest": "hardhat test ./test/vesting.test.js",
     "test-v": "hardhat test ./test/vaults/yDai-vault.test.js",
+    "test-lendingDistribution": "hardhat test ./test/lendingDistribution.test.js",
     "test-v2": "hardhat test ./test/vaults/yUsdc-vault.test.js",
     "test-v3": "hardhat test ./test/vaults/yEth-vault.test.js",
     "test-dist": "hardhat test ./test/vaults/vaultWithDistribution.test.js",

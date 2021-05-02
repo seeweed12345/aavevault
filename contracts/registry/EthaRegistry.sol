@@ -14,7 +14,7 @@ contract LogicRegistry is OwnableUpgradeable {
 
     /// EVENTS
     event LogEnableLogic(address indexed logicAddress);
-    event LogDisableLogic(address indexed logicAddress);    
+    event LogDisableLogic(address indexed logicAddress);
 
     /// @notice Map of logic proxy state
     mapping(address => bool) public logicProxies;
@@ -71,6 +71,9 @@ contract WalletRegistry is LogicRegistry, CloneFactory {
     /// @notice Address to UserWallet proxy map
     mapping(address => SmartWallet) public wallets;
 
+    /// @notice Address to Bool registration status map
+    mapping(address => bool) public walletRegistered;
+
     /// @dev Deploys a new proxy instance and sets custom owner of proxy
     /// Throws if the owner already have a UserWallet
     /// @return wallet - address of new Smart Wallet
@@ -83,6 +86,7 @@ contract WalletRegistry is LogicRegistry, CloneFactory {
         wallet = SmartWallet(_wallet);
         wallet.initialize(address(this), msg.sender);
         wallets[msg.sender] = wallet; // will be changed via record() in next line execution
+        walletRegistered[address(_wallet)] = true;
         emit Created(msg.sender, address(wallet));
     }
 
@@ -104,6 +108,9 @@ contract EthaRegistry is WalletRegistry {
 
     /// @dev keep track of token addresses not allowed to withdraw (i.e. cETH)
     mapping(address => bool) public notAllowed;
+
+    /// @dev keep track of distribution contract addresses for tokens
+    mapping(address => address) public distributionContract;
 
     // EVENTS
     event FeeUpdated(uint newFee);
@@ -169,6 +176,13 @@ contract EthaRegistry is WalletRegistry {
      */
     function getAddressETH() public pure returns (address eth) {
         eth = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+    }
+
+    /**
+     * @dev Set Distribution Contract For Tokens
+     */
+    function setDistribution(address token, address distributionContractAddress) external onlyOwner {
+        distributionContract[token] = distributionContractAddress;
     }
 
     /**
