@@ -12,7 +12,6 @@ const IERC20 = artifacts.require(
 const DistributionFactory = artifacts.require("LendingDistributionFactory");
 const DistributionRewards = artifacts.require("LendingDistributionRewards");
 
-
 const {
   expectRevert,
   expectEvent,
@@ -46,9 +45,19 @@ const CDAI_ADDRESS = "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643";
 const CHI_ADDRESS = "0x0000000000004946c0e9F43F4Dee607b0eF1fA1c";
 const ETHA_ADDRESS = "0x59E9261255644c411AfDd00bD89162d09D862e38";
 
-
 contract("Smart Wallet", ([delegate, random]) => {
-  let registry, wallet, transfers, compound, aave, dydx, uniswap, chi, etha, distributionFactory, daiDistribution, genesis;
+  let registry,
+    wallet,
+    transfers,
+    compound,
+    aave,
+    dydx,
+    uniswap,
+    chi,
+    etha,
+    distributionFactory,
+    daiDistribution,
+    genesis;
 
   before(async function () {
     await hre.network.provider.request({
@@ -68,6 +77,10 @@ contract("Smart Wallet", ([delegate, random]) => {
 
     dai = await IERC20.at(DAI_ADDRESS);
     chi = await IERC20.at(CHI_ADDRESS);
+
+    // Fix fork time
+    const currentTime = Math.floor(Date.now() / 1000);
+    await time.increaseTo(currentTime);
 
     genesis = Number(await time.latest()) + 15;
 
@@ -93,7 +106,11 @@ contract("Smart Wallet", ([delegate, random]) => {
 
     registry = await EthaRegistryTruffle.at(proxy.address);
 
-    distributionFactory = await DistributionFactory.new(ETHA_ADDRESS, genesis, proxy.address);
+    distributionFactory = await DistributionFactory.new(
+      ETHA_ADDRESS,
+      genesis,
+      proxy.address
+    );
 
     await distributionFactory.deploy(
       DAI_ADDRESS,
@@ -101,9 +118,13 @@ contract("Smart Wallet", ([delegate, random]) => {
       REWARD_DURATION
     );
 
-    daiDistribution = await distributionFactory.stakingRewardsInfoByStakingToken(DAI_ADDRESS);
+    daiDistribution = await distributionFactory.stakingRewardsInfoByStakingToken(
+      DAI_ADDRESS
+    );
 
-    await etha.transfer(distributionFactory.address, REWARD_AMOUNT, { from: ETHA_HOLDER });
+    await etha.transfer(distributionFactory.address, REWARD_AMOUNT, {
+      from: ETHA_HOLDER,
+    });
 
     await time.increase(50);
 
@@ -117,21 +138,19 @@ contract("Smart Wallet", ([delegate, random]) => {
       dydx.address,
     ]);
 
-    await registry.setDistribution(
-      DAI_ADDRESS,
-      daiDistribution.stakingRewards
-    );
-
+    await registry.setDistribution(DAI_ADDRESS, daiDistribution.stakingRewards);
   });
 
   it("should only allow etha wallets to stake/withdraw", async function () {
-    let distribution = await DistributionRewards.at(daiDistribution.stakingRewards);
+    let distribution = await DistributionRewards.at(
+      daiDistribution.stakingRewards
+    );
     await expectRevert(
-      distribution.stake(toWei("1000"),{from: USER}),
+      distribution.stake(toWei("1000"), { from: USER }),
       "Invalid Access: Can only be accessed by ETHA wallets"
     );
     await expectRevert(
-      distribution.withdraw(toWei("1000"),{from: USER}),
+      distribution.withdraw(toWei("1000"), { from: USER }),
       "Invalid Access: Can only be accessed by ETHA wallets"
     );
   });
@@ -229,7 +248,9 @@ contract("Smart Wallet", ([delegate, random]) => {
     const invested = await aDaiContract.balanceOf(wallet.address);
     assert.equal(invested, String(50e18));
 
-    let distribution = await DistributionRewards.at(daiDistribution.stakingRewards);
+    let distribution = await DistributionRewards.at(
+      daiDistribution.stakingRewards
+    );
     let stakedBalance = await distribution.balanceOf(wallet.address);
     assert.equal(stakedBalance, String(50e18));
   });
@@ -264,18 +285,29 @@ contract("Smart Wallet", ([delegate, random]) => {
     const invested = await aDaiContract.balanceOf(wallet.address);
     assert(fromWei(invested) > 100); // 50 + 50 + interest earned
 
-    let distribution = await DistributionRewards.at(daiDistribution.stakingRewards);
+    let distribution = await DistributionRewards.at(
+      daiDistribution.stakingRewards
+    );
     let stakedBalance = await distribution.balanceOf(wallet.address);
     assert(stakedBalance == 100e18); //50+50;
     await time.increase(3600);
     //ETHA earned after 1 hour
     let earnedETHA = await distribution.earned(wallet.address);
 
-    console.log('deposited',fromWei(stakedBalance),'\n', 'earned after 1 hour' , fromWei(earnedETHA));
+    console.log(
+      "deposited",
+      fromWei(stakedBalance),
+      "\n",
+      "earned after 1 hour",
+      fromWei(earnedETHA)
+    );
 
     await distribution.getReward(wallet.address);
     let userEthaBalance = await etha.balanceOf(wallet.address);
-    console.log('User ETHA balance after claiming reward', fromWei(userEthaBalance));
+    console.log(
+      "User ETHA balance after claiming reward",
+      fromWei(userEthaBalance)
+    );
   });
 
   it("should invest DAI to Compound Protocol", async function () {
@@ -312,18 +344,29 @@ contract("Smart Wallet", ([delegate, random]) => {
     const invested = await cDaiContract.balanceOf(wallet.address);
     assert(fromWei(invested) > 0);
 
-    let distribution = await DistributionRewards.at(daiDistribution.stakingRewards);
+    let distribution = await DistributionRewards.at(
+      daiDistribution.stakingRewards
+    );
     let stakedBalance = await distribution.balanceOf(wallet.address);
     assert(stakedBalance == 150e18); //50+50 + 50;
     await time.increase(3600);
     //ETHA earned after 1 hour
     let earnedETHA = await distribution.earned(wallet.address);
 
-    console.log('deposited',fromWei(stakedBalance),'\n', 'earned after 1 hour' , fromWei(earnedETHA));
+    console.log(
+      "deposited",
+      fromWei(stakedBalance),
+      "\n",
+      "earned after 1 hour",
+      fromWei(earnedETHA)
+    );
 
     await distribution.getReward(wallet.address);
     let userEthaBalance = await etha.balanceOf(wallet.address);
-    console.log('User ETHA balance after claiming reward', fromWei(userEthaBalance));
+    console.log(
+      "User ETHA balance after claiming reward",
+      fromWei(userEthaBalance)
+    );
   });
 
   it("should invest DAI to DyDx Protocol", async function () {
@@ -360,18 +403,29 @@ contract("Smart Wallet", ([delegate, random]) => {
     let { value } = await soloMargin.getAccountWei([wallet.address, 0], 3);
     assert(fromWei(value), 50); // balance just after invested is 49.9999999999
 
-    let distribution = await DistributionRewards.at(daiDistribution.stakingRewards);
+    let distribution = await DistributionRewards.at(
+      daiDistribution.stakingRewards
+    );
     let stakedBalance = await distribution.balanceOf(wallet.address);
     assert(stakedBalance == 200e18); //50+50+50+50;
     await time.increase(3600);
 
     let earnedETHA = await distribution.earned(wallet.address);
 
-    console.log('deposited',fromWei(stakedBalance),'\n', 'earned after 1 hour' , fromWei(earnedETHA));
+    console.log(
+      "deposited",
+      fromWei(stakedBalance),
+      "\n",
+      "earned after 1 hour",
+      fromWei(earnedETHA)
+    );
 
     await distribution.getReward(wallet.address);
     let userEthaBalance = await etha.balanceOf(wallet.address);
-    console.log('User ETHA balance after claiming reward', fromWei(userEthaBalance));
+    console.log(
+      "User ETHA balance after claiming reward",
+      fromWei(userEthaBalance)
+    );
   });
 
   it("should swap all remaining DAI to ETH using Uniswap", async function () {
@@ -412,35 +466,37 @@ contract("Smart Wallet", ([delegate, random]) => {
   });
 
   it("should withdraw DAI from Compound Protocol", async function () {
-   const data = web3.eth.abi.encodeFunctionCall(
-     {
-       name: "redeemUnderlying",
-       type: "function",
-       inputs: [
-         {
-           type: "address",
-           name: "erc20",
-         },
-         {
-           type: "address",
-           name: "cErc20",
-         },
-         {
-           type: "uint256",
-           name: "tokenAmt",
-         },
-       ],
-     },
-     [DAI_ADDRESS, CDAI_ADDRESS, String(50e18)]
-   );
+    const data = web3.eth.abi.encodeFunctionCall(
+      {
+        name: "redeemUnderlying",
+        type: "function",
+        inputs: [
+          {
+            type: "address",
+            name: "erc20",
+          },
+          {
+            type: "address",
+            name: "cErc20",
+          },
+          {
+            type: "uint256",
+            name: "tokenAmt",
+          },
+        ],
+      },
+      [DAI_ADDRESS, CDAI_ADDRESS, String(50e18)]
+    );
 
-   const tx = await wallet.execute([compound.address], [data], false, {
-     from: USER,
-     gas: web3.utils.toHex(5e6),
-   });
+    const tx = await wallet.execute([compound.address], [data], false, {
+      from: USER,
+      gas: web3.utils.toHex(5e6),
+    });
 
-   let distribution = await DistributionRewards.at(daiDistribution.stakingRewards);
-   let stakedBalance = await distribution.balanceOf(wallet.address);
-   assert(stakedBalance == 150e18); //50+50+50+50 - 50;
- });
+    let distribution = await DistributionRewards.at(
+      daiDistribution.stakingRewards
+    );
+    let stakedBalance = await distribution.balanceOf(wallet.address);
+    assert(stakedBalance == 150e18); //50+50+50+50 - 50;
+  });
 });
