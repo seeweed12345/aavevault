@@ -1,5 +1,21 @@
 pragma solidity ^0.5.16;
 
+interface IRegistry {
+    function logic(address logicAddr) external view returns (bool);
+
+    function implementation(bytes32 key) external view returns (address);
+
+    function notAllowed(address erc20) external view returns (bool);
+
+    function deployWallet() external returns (address);
+
+    function wallets(address user) external view returns (address);
+
+    function walletRegistered(address wallet) external view returns (bool);
+
+    function distributionContract(address token) external view returns (address);
+}
+
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
  * the optional functions; to access them see `ERC20Detailed`.
@@ -484,9 +500,9 @@ interface IStakingRewards {
 
     // Mutative
 
-    function stake(address user, uint256 amount) external;
+    function stake(uint256 amount) external;
 
-    function withdraw(address user, uint256 amount) external;
+    function withdraw(uint256 amount) external;
 
     function getReward(address user) external;
 
@@ -504,7 +520,7 @@ contract RewardsDistributionRecipient {
     }
 }
 
-contract DistributionRewards is IStakingRewards, RewardsDistributionRecipient, ReentrancyGuard {
+contract LendingDistributionRewards is IStakingRewards, RewardsDistributionRecipient, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -522,7 +538,7 @@ contract DistributionRewards is IStakingRewards, RewardsDistributionRecipient, R
 
     uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
-    address public vault;
+    address public registry;
     address public owner;
     /* ========== CONSTRUCTOR ========== */
 
@@ -530,13 +546,13 @@ contract DistributionRewards is IStakingRewards, RewardsDistributionRecipient, R
         address _rewardsDistribution,
         address _rewardsToken,
         uint256 _rewardsDuration,
-        address _vault,
+        address _registry,
         address _owner
     ) public {
         rewardsToken = IERC20(_rewardsToken);
         rewardsDistribution = _rewardsDistribution;
         rewardsDuration = _rewardsDuration;
-        vault = _vault;
+        registry = _registry;
         owner = _owner;
     }
 
@@ -572,18 +588,20 @@ contract DistributionRewards is IStakingRewards, RewardsDistributionRecipient, R
         return rewardRate.mul(rewardsDuration);
     }
 
-    function stake(address user, uint256 amount) external onlyVault nonReentrant updateReward(user) {
+    function stake(uint256 amount) external nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
+        require(IRegistry(registry).walletRegistered(msg.sender) == true, "Invalid Access: Can only be accessed by ETHA wallets");
         _totalSupply = _totalSupply.add(amount);
-        _balances[user] = _balances[user].add(amount);
-        emit Staked(user, amount);
+        _balances[msg.sender] = _balances[msg.sender].add(amount);
+        emit Staked(msg.sender, amount);
     }
 
-    function withdraw(address user, uint256 amount) public onlyVault nonReentrant updateReward(user) {
+    function withdraw(uint256 amount) public nonReentrant updateReward(msg.sender) {
         require(amount > 0, "Cannot withdraw 0");
+        require(IRegistry(registry).walletRegistered(msg.sender) == true, "Invalid Access: Can only be accessed by ETHA wallets");
         _totalSupply = _totalSupply.sub(amount);
-        _balances[user] = _balances[user].sub(amount);
-        emit Withdrawn(user, amount);
+        _balances[msg.sender] = _balances[msg.sender].sub(amount);
+        emit Withdrawn(msg.sender, amount);
     }
 
     function getReward(address user) public nonReentrant updateReward(user) {
@@ -593,10 +611,6 @@ contract DistributionRewards is IStakingRewards, RewardsDistributionRecipient, R
             rewardsToken.safeTransfer(user, reward);
             emit RewardPaid(user, reward);
         }
-    }
-
-    function withdrawTokens(address erc20, address recipient, uint256 amount) public{
-      require(IERC20(erc20).transfer(recipient, amount), "Error while transferring tokens");
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
@@ -638,11 +652,6 @@ contract DistributionRewards is IStakingRewards, RewardsDistributionRecipient, R
             rewards[account] = earned(account);
             userRewardPerTokenPaid[account] = rewardPerTokenStored;
         }
-        _;
-    }
-
-    modifier onlyVault() {
-        require(msg.sender == vault, "Invalid Access: Can only be accessed by ETHA Vaults");
         _;
     }
 

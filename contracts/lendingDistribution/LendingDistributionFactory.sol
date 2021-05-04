@@ -1,11 +1,12 @@
 pragma solidity ^0.5.16;
 
-import "./Distribution.sol";
+import "./LendingDistribution.sol";
 
-contract DistributionFactory is Ownable {
+contract LendingDistributionFactory is Ownable {
     // immutables
     address public rewardsToken;
     uint public stakingRewardsGenesis;
+    address public registry;
 
     // the staking tokens for which the rewards contract has been deployed
     address[] public stakingTokens;
@@ -21,23 +22,25 @@ contract DistributionFactory is Ownable {
 
     constructor(
         address _rewardsToken,
-        uint _stakingRewardsGenesis
+        uint _stakingRewardsGenesis,
+        address _registry
     ) Ownable() public {
         require(_stakingRewardsGenesis >= block.timestamp, 'StakingRewardsFactory::constructor: genesis too soon');
 
         rewardsToken = _rewardsToken;
         stakingRewardsGenesis = _stakingRewardsGenesis;
+        registry = _registry;
     }
 
     ///// permissioned functions
 
     // deploy a staking reward contract for the staking token, and store the reward amount
     // the reward will be distributed to the staking reward contract no sooner than the genesis
-    function deploy(address stakingToken, uint rewardAmount, uint256 rewardsDuration, address vault) public onlyOwner {
+    function deploy(address stakingToken, uint rewardAmount, uint256 rewardsDuration) public onlyOwner {
         StakingRewardsInfo storage info = stakingRewardsInfoByStakingToken[stakingToken];
         require(info.stakingRewards == address(0), 'StakingRewardsFactory::deploy: already deployed');
 
-        info.stakingRewards = address(new DistributionRewards(/*_rewardsDistribution=*/ address(this), rewardsToken, rewardsDuration, vault, owner()));
+        info.stakingRewards = address(new LendingDistributionRewards(/*_rewardsDistribution=*/ address(this), rewardsToken, rewardsDuration, registry, owner()));
         info.rewardAmount = rewardAmount;
         stakingTokens.push(stakingToken);
     }
@@ -68,7 +71,7 @@ contract DistributionFactory is Ownable {
                 IERC20(rewardsToken).transfer(info.stakingRewards, rewardAmount),
                 'StakingRewardsFactory::notifyRewardAmount: transfer failed'
             );
-            DistributionRewards(info.stakingRewards).notifyRewardAmount(rewardAmount);
+            LendingDistributionRewards(info.stakingRewards).notifyRewardAmount(rewardAmount);
         }
     }
 

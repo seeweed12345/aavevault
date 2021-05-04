@@ -24,8 +24,6 @@ module.exports = {
     live: {
       url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
       accounts: [process.env.MAINNET_PRIVKEY],
-      gasPrice: 110e9,
-      gas: 1e6,
       timeout: 300000, // 5 min
     },
     rinkeby: {
@@ -48,7 +46,7 @@ module.exports = {
   },
   gasReporter: {
     currency: "USD",
-    gasPrice: 100,
+    gasPrice: 60,
     // showTimeSpent: true,
     enabled: process.env.REPORT_GAS ? true : false,
     coinmarketcap: process.env.CMC_API_KEY,
