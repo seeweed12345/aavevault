@@ -5,7 +5,7 @@ import "../interfaces/IUniswapFactory.sol";
 import "../interfaces/IUniswapV2Factory.sol";
 import "../interfaces/IUniswapExchange.sol";
 import "../interfaces/IUniswapV2Exchange.sol";
-import "../interfaces/IUniswapV2Router.sol";
+import "../interfaces/IUniswapV2Router02.sol";
 import "../interfaces/IWETH.sol";
 import "../utils/UniversalERC20.sol";
 

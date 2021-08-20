@@ -12,48 +12,56 @@ require("hardhat-gas-reporter");
 module.exports = {
   networks: {
     hardhat: {
+      // Uncomment these lines to use mainnet fork
       forking: {
-        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-        blockNumber: 12206400,
-        gasPrice: 110e9,
+        url: `https://polygon-mainnet.g.alchemy.com/v2/Lgk4bSfZv7IFZYxf1tewZXmsiQAezu9V`,
+        blockNumber: 17920566,
       },
     },
-    local: {
-      url: "http://localhost:8545",
-    },
-    live: {
-      url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-      accounts: [process.env.MAINNET_PRIVKEY],
-      timeout: 300000, // 5 min
-    },
-    rinkeby: {
-      url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
-      accounts: [process.env.RINKEBY_PRIVATE_KEY],
-      gasPrice: 10e9,
-      gas: 6e6,
-    },
-    fork: {
-      url: process.env.FORK_URL,
-      gasPrice: 100e9,
-      gas: 5e6,
-      timeout: 300000, // 5 min
-    },
+    // live: {
+    //   url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_KEY}`,
+    //   accounts: [process.env.MAINNET_PRIVKEY],
+    // },
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API,
-    // url: "https://api-rinkeby.etherscan.io/",
-    url: "https://api.etherscan.io/",
   },
-  gasReporter: {
-    currency: "USD",
-    gasPrice: 60,
-    // showTimeSpent: true,
-    enabled: process.env.REPORT_GAS ? true : false,
-    coinmarketcap: process.env.CMC_API_KEY,
-    // outputFile: "./gas-report.txt",
+  namedAccounts: {
+    deployer: 0,
+    // admin: {
+    //   default: 1,
+    //   mainnet: "0x2cf7252e74036d1da831d11089d326296e64a728",
+    // },
   },
   solidity: {
     compilers: [
+      {
+        version: "0.7.5",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: "0.5.0",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: "0.7.3",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
       {
         version: "0.5.17",
         settings: {
@@ -64,7 +72,7 @@ module.exports = {
         },
       },
       {
-        version: "0.7.3",
+        version: "0.6.12",
         settings: {
           optimizer: {
             enabled: true,
